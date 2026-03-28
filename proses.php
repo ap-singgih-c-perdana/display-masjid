@@ -312,54 +312,63 @@ class proses extends fb{
 	}
 	
 	private function saveWallpaper(){
-		// $this->data	= $_FILES;
-		
-		if(isset($_FILES)){
-			$allowed_ext =  array('jpg');
-			$i=0;
-			foreach($_FILES as $file){
-				if($file['size']>0){
-					$ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-					if(!in_array($ext,$allowed_ext) ) {
-						$this->retError($file['name']." tidak didukung\nExt yang diperbolehkan : ".implode(", ",$allowed_ext));
-					}
-					else {
-						// move_uploaded_file($file['tmp_name'], "display/wallpaper/".time().'__'.$file['name']);
-						// move_uploaded_file($file['tmp_name'], "display/wallpaper/".time().'.'.$ext);
-						move_uploaded_file($file['tmp_name'], "display/wallpaper/".time().$i.'.'.$ext);
-						// $this->writeFeedBackError('upload ok');
+		if(empty($_FILES)) $this->retError('File wallpaper belum dipilih...');
+		$dir = 'display/wallpaper/';
+		if(!is_dir($dir) || !is_writable($dir)){
+			$this->retError('Folder wallpaper tidak bisa ditulis. Cek permission folder: '.$dir);
+		}
+		$allowed_ext =  array('jpg');
+		$i=0;
+		$uploaded = false;
+		foreach($_FILES as $file){
+			if($file['size']>0){
+				$uploaded = true;
+				$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+				if(!in_array($ext,$allowed_ext) ) {
+					$this->retError($file['name']." tidak didukung\nExt yang diperbolehkan : ".implode(", ",$allowed_ext));
+				}
+				else {
+					$target = $dir.time().$i.'.'.$ext;
+					if(!move_uploaded_file($file['tmp_name'], $target)){
+						$this->retError('Gagal upload wallpaper ke folder tujuan. Cek permission folder: '.$dir);
 					}
 				}
-				$i++;
 			}
-			// $this->writeFeedBackError('upload ok');
+			$i++;
 		}
-		
-		
+		if(!$uploaded) $this->retError('File wallpaper belum dipilih...');
 		$this->retSuccess();
 	}
 	
 	private function saveLogo(){
-		if(isset($_FILES)){
-			$allowed_ext =  array('png');
-			$i=0;
-			foreach($_FILES as $file){
-				if($file['size']>0){
-					$ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-					if(!in_array($ext,$allowed_ext) ) {
-						$this->retError($file['name']." tidak didukung\nExt yang diperbolehkan : ".implode(", ",$allowed_ext));
+		if(empty($_FILES)) $this->retError('File logo belum dipilih...');
+		$dir = 'display/logo/';
+		if(!is_dir($dir) || !is_writable($dir)){
+			$this->retError('Folder logo tidak bisa ditulis. Cek permission folder: '.$dir);
+		}
+		$allowed_ext =  array('png');
+		$uploaded = false;
+		foreach($_FILES as $file){
+			if($file['size']>0){
+				$uploaded = true;
+				$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+				if(!in_array($ext,$allowed_ext) ) {
+					$this->retError($file['name']." tidak didukung\nExt yang diperbolehkan : ".implode(", ",$allowed_ext));
+				}
+				else {
+					// tricky ==> kalo replace file logo.png ==> file di browser masih kesimpen di cache ==> ngeselin
+					$oldLogo	= 'display/logo/'.$this->getLogo();
+					if(file_exists($oldLogo) && !unlink($oldLogo)){
+						$this->retError('Logo lama tidak bisa dihapus. Cek permission file/folder logo.');
 					}
-					else {
-						// tricky ==> kalo replace file logo.png ==> file di browser masih kesimpen di cache ==> ngeselin	
-						$oldLogo	= 'display/logo/'.$this->getLogo();
-						if(file_exists($oldLogo)) unlink($oldLogo);
-						move_uploaded_file($file['tmp_name'], "display/logo/".time().'.'.$ext);
-						// move_uploaded_file($file['tmp_name'], "display/img/logo.".$ext);//ganti logo masih kesimpen  di cache browser
+					$target = $dir.time().'.'.$ext;
+					if(!move_uploaded_file($file['tmp_name'], $target)){
+						$this->retError('Gagal upload logo ke folder tujuan. Cek permission folder: '.$dir);
 					}
 				}
-				$i++;
 			}
 		}
+		if(!$uploaded) $this->retError('File logo belum dipilih...');
 		$this->retSuccess();
 	}
 	
@@ -1203,7 +1212,7 @@ isha		= 18°
 			<div class="box-body">
 				<div class="input-group">
 				  <span class="input-group-addon">File logo</span>
-				  <input type="file" class="form-control input-sm" placeholder="" data-proses="saveLogo">
+				  <input type="file" class="form-control input-sm" placeholder="" data-proses="saveLogo" accept=".png,image/png">
 				</div>
 				<div class="input">
 					<small>
