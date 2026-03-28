@@ -12,7 +12,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
+      - name: List root dir
+        run: ls -la
       - name: Deploy to FTP
         uses: samkirkland/FTP-Deploy-Action@v4.3.4
         with:
