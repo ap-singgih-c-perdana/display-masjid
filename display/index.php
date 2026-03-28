@@ -159,8 +159,6 @@
 		<div id="logo" style="background-image: url(logo/<?=$logo?>);"></div>
 		<div id="running-text">
 			<div class="item">
-				<!-- <div class="text"> -->
-				<marquee>
 				<?php 
 					foreach($db['running_text'] as $k => $v){
 						echo '<i class="fa fa-square-o" aria-hidden="true"></i> '.htmlentities($v);
@@ -183,8 +181,6 @@
 // 						echo '<i class="fa fa-square-o" aria-hidden="true"></i> Silakan mengganti password admin untuk menghilangkan tulisan ini';
 // 					}
 				?>
-				</marquee>
-				<!-- </div> -->
 			</div>
 		</div>
 	</div>
@@ -309,6 +305,7 @@
 			audio	: new Audio('img/beep.mp3'),
 			
 				initialize	: function(){
+					app.initRunningText();
 					app.setupYoutube();
 					app.setupPpt();
 					app.primeJadwal();
@@ -325,7 +322,20 @@
 				// app.runFullCountDown(testTime,'TEST COUNTER',false);
 				// app.showDisplayAdzan('Dzuhur');
 				// app.showDisplayKhutbah();
-			},
+				},
+				initRunningText: function(){
+					let $runningText = $('#running-text .item');
+					if(!$runningText.length) return;
+					$runningText.marquee({
+						duration: 15000,
+						delayBeforeStart: 0,
+						gap: 80,
+						direction: 'left',
+						duplicated: true,
+						startVisible: true,
+						pauseOnHover: false
+					});
+				},
 				cekPerDetik	: function(){
 					if(!app.tglHariIni || moment().format('YYYY-MM-DD') != moment(app.tglHariIni).format('YYYY-MM-DD')){
 						app.tglHariIni	= moment();
