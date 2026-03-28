@@ -231,15 +231,6 @@
 		
 			//PrayTimes initialize
 			var format 			= '24h';
-			var alAdhanMethod	= 20;
-			var alAdhanTimeout	= 3000;
-			var alAdhanPrayerMap	= {
-				fajr	: 'Fajr',
-				dhuhr	: 'Dhuhr',
-				asr		: 'Asr',
-				maghrib	: 'Maghrib',
-				isha	: 'Isha'
-			};
 			<?php
 				echo "var lat 		= ".$db['setting']['latitude'].";\n";
 				echo "var lng 		= ".$db['setting']['longitude'].";\n";
@@ -283,7 +274,6 @@
 				jadwalHariIni	: {},
 				jadwalBesok		: {},
 				jadwalCache		: {},
-				jadwalRequests	: {},
 				timer			: false,
 			// waitAdzanTimer	: false,	// Display countdown sebelum adzan
 			adzanTimer		: false,	// Display adzan
@@ -426,35 +416,8 @@
 				getDateKey	: function(jadwalDate){
 					return moment(jadwalDate).format('YYYY-MM-DD');
 				},
-				buildApiUrl	: function(dateKey){
-					let tanggalApi = moment(dateKey, 'YYYY-MM-DD').format('DD-MM-YYYY');
-					return 'https://api.aladhan.com/v1/timings/' + tanggalApi +
-						'?latitude=' + encodeURIComponent(lat) +
-						'&longitude=' + encodeURIComponent(lng) +
-						'&method=' + encodeURIComponent(alAdhanMethod);
-				},
 				getLocalJadwal	: function(jadwalDate){
 					return prayTimes.getTimes(moment(jadwalDate).toDate(), [lat, lng], timeZone, dst, format);
-				},
-				normalizeApiTime	: function(value){
-					return $.trim(String(value || '').split(' ')[0]);
-				},
-				applyTuneToApiTimes	: function(times){
-					let tunedTimes = {};
-					$.each(app.db.prayName, function(k){
-						let apiKey = alAdhanPrayerMap[k] || k;
-						let baseTime = app.normalizeApiTime(times[apiKey]);
-						if(!baseTime) return;
-						let offset = parseInt(app.db.prayTimesTune[k], 10);
-						if(isNaN(offset)) offset = 0;
-						tunedTimes[k] = moment(baseTime, 'HH:mm').add(offset, 'minutes').format('HH:mm');
-					});
-					return tunedTimes;
-				},
-				extractApiTimes	: function(response){
-					if(!response || response.code !== 200 || !response.data || !response.data.timings) return false;
-					let apiTimes = app.applyTuneToApiTimes(response.data.timings);
-					return apiTimes.fajr && apiTimes.dhuhr && apiTimes.asr && apiTimes.maghrib && apiTimes.isha ? apiTimes : false;
 				},
 				setJadwalCache	: function(dateKey, times, source){
 					app.jadwalCache[dateKey] = {
@@ -464,27 +427,9 @@
 				},
 				ensureJadwal	: function(jadwalDate){
 					let dateKey = app.getDateKey(jadwalDate);
-					if(app.jadwalCache[dateKey] || app.jadwalRequests[dateKey]) return;
-					let fallbackTimes = app.getLocalJadwal(jadwalDate);
-					app.jadwalRequests[dateKey] = $.ajax({
-						url			: app.buildApiUrl(dateKey),
-						dataType	: 'json',
-						timeout		: alAdhanTimeout
-					}).done(function(response){
-						let apiTimes = app.extractApiTimes(response);
-						if(apiTimes){
-							app.setJadwalCache(dateKey, apiTimes, 'api');
-						}
-						else{
-							app.setJadwalCache(dateKey, fallbackTimes, 'local');
-						}
-						app.syncJadwalAktif();
-					}).fail(function(){
-						app.setJadwalCache(dateKey, fallbackTimes, 'local');
-						app.syncJadwalAktif();
-					}).always(function(){
-						delete app.jadwalRequests[dateKey];
-					});
+					if(app.jadwalCache[dateKey]) return;
+					app.setJadwalCache(dateKey, app.getLocalJadwal(jadwalDate), 'local');
+					app.syncJadwalAktif();
 				},
 				syncJadwalAktif	: function(){
 					let hariIniKey = app.getDateKey(app.tglHariIni || moment());
