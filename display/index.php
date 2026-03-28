@@ -233,12 +233,21 @@
 		
 		
 		
-		//PrayTimes initialize
-		var format 			= '24h';
-		<?php
-			echo "var lat 		= ".$db['setting']['latitude'].";\n";
-			echo "var lng 		= ".$db['setting']['longitude'].";\n";
-			echo "var timeZone 	= ".$db['setting']['timeZone'].";\n";
+			//PrayTimes initialize
+			var format 			= '24h';
+			var alAdhanMethod	= 20;
+			var alAdhanTimeout	= 3000;
+			var alAdhanPrayerMap	= {
+				fajr	: 'Fajr',
+				dhuhr	: 'Dhuhr',
+				asr		: 'Asr',
+				maghrib	: 'Maghrib',
+				isha	: 'Isha'
+			};
+			<?php
+				echo "var lat 		= ".$db['setting']['latitude'].";\n";
+				echo "var lng 		= ".$db['setting']['longitude'].";\n";
+				echo "var timeZone 	= ".$db['setting']['timeZone'].";\n";
 			echo "var dst 		= ".$db['setting']['dst'].";\n";
 			
 			
@@ -271,13 +280,15 @@
 		//Baris ini ke bawah jika inget nanti pindah ke file terpisah biar rapi......
 		
 		var app	={
-			db	: $.parseJSON(`<?=stripslashes(str_replace("`","\\`",json_encode($showDb)))?>`),
-			cekDb	: false,
-			tglHariIni		: '',
-			tglBesok		: '',
-			jadwalHariIni	: {},
-			jadwalBesok		: {},
-			timer			: false,
+				db	: $.parseJSON(`<?=stripslashes(str_replace("`","\\`",json_encode($showDb)))?>`),
+				cekDb	: false,
+				tglHariIni		: '',
+				tglBesok		: '',
+				jadwalHariIni	: {},
+				jadwalBesok		: {},
+				jadwalCache		: {},
+				jadwalRequests	: {},
+				timer			: false,
 			// waitAdzanTimer	: false,	// Display countdown sebelum adzan
 			adzanTimer		: false,	// Display adzan
 			countDownTimer	: false,	// Display countdown iqomah
@@ -297,13 +308,14 @@
 			isha	: '',
 			audio	: new Audio('img/beep.mp3'),
 			
-			initialize	: function(){
-				app.setupYoutube();
-				app.setupPpt();
-				document.addEventListener('fullscreenchange', app.handleFullscreenChange);
-				document.addEventListener('webkitfullscreenchange', app.handleFullscreenChange);
-				app.timer	= setInterval(function(){app.cekPerDetik()},1000);
-				$('#preloader').delay(350).fadeOut('slow');
+				initialize	: function(){
+					app.setupYoutube();
+					app.setupPpt();
+					app.primeJadwal();
+					document.addEventListener('fullscreenchange', app.handleFullscreenChange);
+					document.addEventListener('webkitfullscreenchange', app.handleFullscreenChange);
+					app.timer	= setInterval(function(){app.cekPerDetik()},1000);
+					$('#preloader').delay(350).fadeOut('slow');
 				// console.log(app.db);
 				
 				
@@ -314,29 +326,15 @@
 				// app.showDisplayAdzan('Dzuhur');
 				// app.showDisplayKhutbah();
 			},
-			cekPerDetik	: function(){
-				if(!app.tglHariIni || moment().format('YYYY-MM-DD') != moment(app.tglHariIni).format('YYYY-MM-DD')){
-					app.tglHariIni	= moment();
-					app.tglBesok 	= moment().add(1,'days');
-					// console.log(app.tglHariIni);
-					// console.log(app.tglBesok);
-					app.jadwalHariIni	= app.getJadwal(moment(app.tglHariIni).toDate());
-					app.jadwalBesok		= app.getJadwal(moment(app.tglBesok).toDate());
-					// console.log(app.jadwalHariIni);
-					// console.log(app.jadwalBesok);
-					app.fajr	= moment(app.jadwalHariIni.fajr,'HH:mm');
-					app.dhuhr	= moment(app.jadwalHariIni.dhuhr,'HH:mm');
-					app.asr		= moment(app.jadwalHariIni.asr,'HH:mm');
-					app.maghrib	= moment(app.jadwalHariIni.maghrib,'HH:mm');
-					app.isha	= moment(app.jadwalHariIni.isha,'HH:mm');
-					// console.log('fajr : '+app.fajr.format('YYYY-MM-DD HH:mm:ss'));
-					// console.log('dhuhr : '+app.dhuhr.format('YYYY-MM-DD HH:mm:ss'));
-					// console.log('asr : '+app.asr.format('YYYY-MM-DD HH:mm:ss'));
-					// console.log('maghrib : '+app.maghrib.format('YYYY-MM-DD HH:mm:ss'));
-					// console.log('isha : '+app.isha.format('YYYY-MM-DD HH:mm:ss'));
-				}
-				app.showJadwal();
-				app.displaySchedule();
+				cekPerDetik	: function(){
+					if(!app.tglHariIni || moment().format('YYYY-MM-DD') != moment(app.tglHariIni).format('YYYY-MM-DD')){
+						app.tglHariIni	= moment();
+						app.tglBesok 	= moment().add(1,'days');
+						app.primeJadwal();
+					}
+					app.syncJadwalAktif();
+					app.showJadwal();
+					app.displaySchedule();
 				// app.showCountDownNextPray();
 				// app.runRightCountDown(app.dhuhr,'Dzuhur');
 				
@@ -399,50 +397,142 @@
 				}
 				app.updateContentVisibility();
 			},
-			updateContentVisibility: function(){
-				let youtube = app.db.youtube || {};
-				let showYoutube = app.isEnabled(youtube.active) && app.youtubeReady;
-				let ppt = app.db.ppt || {};
-				let showPpt = !showYoutube && app.isEnabled(ppt.active) && app.pptReady;
-				$('#youtube-container').toggle(showYoutube);
-				$('#ppt-container').toggle(showPpt);
-				$('#quote').toggle(!showYoutube && !showPpt);
-			},
-			getJadwal	: function(jadwalDate){
-				let times = prayTimes.getTimes(jadwalDate, [lat, lng], timeZone, dst, format);
-				return times;
-			},
-			showJadwal	: function(){
-				// console.log(app.db.prayName)
-				// let jamSekarang	= moment().add(9,'months');
-				let jamSekarang	= moment();
+				updateContentVisibility: function(){
+					let youtube = app.db.youtube || {};
+					let showYoutube = app.isEnabled(youtube.active) && app.youtubeReady;
+					let ppt = app.db.ppt || {};
+					let showPpt = !showYoutube && app.isEnabled(ppt.active) && app.pptReady;
+					$('#youtube-container').toggle(showYoutube);
+					$('#ppt-container').toggle(showPpt);
+					$('#quote').toggle(!showYoutube && !showPpt);
+				},
+				primeJadwal	: function(){
+					let hariIni = app.tglHariIni ? moment(app.tglHariIni) : moment();
+					let besok = app.tglBesok ? moment(app.tglBesok) : moment(hariIni).add(1,'days');
+					app.ensureJadwal(hariIni);
+					app.ensureJadwal(besok);
+					app.syncJadwalAktif();
+				},
+				getDateKey	: function(jadwalDate){
+					return moment(jadwalDate).format('YYYY-MM-DD');
+				},
+				buildApiUrl	: function(dateKey){
+					let tanggalApi = moment(dateKey, 'YYYY-MM-DD').format('DD-MM-YYYY');
+					return 'https://api.aladhan.com/v1/timings/' + tanggalApi +
+						'?latitude=' + encodeURIComponent(lat) +
+						'&longitude=' + encodeURIComponent(lng) +
+						'&method=' + encodeURIComponent(alAdhanMethod);
+				},
+				getLocalJadwal	: function(jadwalDate){
+					return prayTimes.getTimes(moment(jadwalDate).toDate(), [lat, lng], timeZone, dst, format);
+				},
+				normalizeApiTime	: function(value){
+					return $.trim(String(value || '').split(' ')[0]);
+				},
+				applyTuneToApiTimes	: function(times){
+					let tunedTimes = {};
+					$.each(app.db.prayName, function(k){
+						let apiKey = alAdhanPrayerMap[k] || k;
+						let baseTime = app.normalizeApiTime(times[apiKey]);
+						if(!baseTime) return;
+						let offset = parseInt(app.db.prayTimesTune[k], 10);
+						if(isNaN(offset)) offset = 0;
+						tunedTimes[k] = moment(baseTime, 'HH:mm').add(offset, 'minutes').format('HH:mm');
+					});
+					return tunedTimes;
+				},
+				extractApiTimes	: function(response){
+					if(!response || response.code !== 200 || !response.data || !response.data.timings) return false;
+					let apiTimes = app.applyTuneToApiTimes(response.data.timings);
+					return apiTimes.fajr && apiTimes.dhuhr && apiTimes.asr && apiTimes.maghrib && apiTimes.isha ? apiTimes : false;
+				},
+				setJadwalCache	: function(dateKey, times, source){
+					app.jadwalCache[dateKey] = {
+						times	: times,
+						source	: source
+					};
+				},
+				ensureJadwal	: function(jadwalDate){
+					let dateKey = app.getDateKey(jadwalDate);
+					if(app.jadwalCache[dateKey] || app.jadwalRequests[dateKey]) return;
+					let fallbackTimes = app.getLocalJadwal(jadwalDate);
+					app.jadwalRequests[dateKey] = $.ajax({
+						url			: app.buildApiUrl(dateKey),
+						dataType	: 'json',
+						timeout		: alAdhanTimeout
+					}).done(function(response){
+						let apiTimes = app.extractApiTimes(response);
+						if(apiTimes){
+							app.setJadwalCache(dateKey, apiTimes, 'api');
+						}
+						else{
+							app.setJadwalCache(dateKey, fallbackTimes, 'local');
+						}
+						app.syncJadwalAktif();
+					}).fail(function(){
+						app.setJadwalCache(dateKey, fallbackTimes, 'local');
+						app.syncJadwalAktif();
+					}).always(function(){
+						delete app.jadwalRequests[dateKey];
+					});
+				},
+				syncJadwalAktif	: function(){
+					let hariIniKey = app.getDateKey(app.tglHariIni || moment());
+					let besokKey = app.getDateKey(app.tglBesok || moment().add(1,'days'));
+					if(app.jadwalCache[hariIniKey]){
+						app.jadwalHariIni = app.jadwalCache[hariIniKey].times;
+						app.fajr	= moment(app.jadwalHariIni.fajr,'HH:mm');
+						app.dhuhr	= moment(app.jadwalHariIni.dhuhr,'HH:mm');
+						app.asr		= moment(app.jadwalHariIni.asr,'HH:mm');
+						app.maghrib	= moment(app.jadwalHariIni.maghrib,'HH:mm');
+						app.isha	= moment(app.jadwalHariIni.isha,'HH:mm');
+					}
+					if(app.jadwalCache[besokKey]){
+						app.jadwalBesok = app.jadwalCache[besokKey].times;
+					}
+				},
+				isJadwalReady	: function(){
+					return !!(app.jadwalHariIni.fajr && app.jadwalBesok.fajr);
+				},
+				showJadwal	: function(){
+					// console.log(app.db.prayName)
+					// let jamSekarang	= moment().add(9,'months');
+					let jamSekarang	= moment();
 				//+5 menit baru berubah yang aktif (misal sekarang jam dzuhur, di jadwal setelah 5 menit baru berubah yang ashar yang aktif)
 				let jamDelay	= moment().subtract(5,'minutes');
 				let jadwal	= '';
 				let hari	= app.db.dayName[jamSekarang.format("dddd")];	//pastikan moment js pake standart inggris (default) ==> jangan pindah locale
 				let bulan	= app.db.monthName[jamSekarang.format("MMMM")];
 				
-				// $('#tgl').html(moment().format("dddd, DD MMMM YYYY"));
-				$('#jam').html(jamSekarang.format("HH.mm[<div>]ss[</div>]"));
-				$('#tgl').html(jamSekarang.format("["+hari+"], DD ["+bulan+"] YYYY"));
-				
-				if($('.full-screen').is(":visible")){
-					$('#full-screen-clock').html(jamSekarang.format("[<i class='fa fa-clock-o''></i>&nbsp;&nbsp;]HH:mm"));
-					$('#full-screen-clock').slideDown();
-					console.log('show');
-				}
-				else $('#full-screen-clock').slideUp();
-				
-				let jadwalDipake = app.jadwalHariIni;
-				let jadwalPlusIcon	= '';
-				//jika diatasa isya' pake jadwal besok
-				
-				// console.log(jamSekarang.format('YYYY-MM-DD HH:mm:ss'));
-				if(jamDelay > app.isha){
-					jadwalDipakeapp	= app.jadwalBesok;
-					jadwalPlusIcon	= '<span><i class="fa fa-plus" aria-hidden="true"></i></span>';
-					// console.log('besok');
-				}
+					// $('#tgl').html(moment().format("dddd, DD MMMM YYYY"));
+					$('#jam').html(jamSekarang.format("HH.mm[<div>]ss[</div>]"));
+					$('#tgl').html(jamSekarang.format("["+hari+"], DD ["+bulan+"] YYYY"));
+					if(!app.jadwalHariIni.fajr){
+						$('#jadwal').html('<div class="row"><div class="col-xs-12">Memuat jadwal sholat...</div></div>');
+						return;
+					}
+					
+					if($('.full-screen').is(":visible")){
+						$('#full-screen-clock').html(jamSekarang.format("[<i class='fa fa-clock-o''></i>&nbsp;&nbsp;]HH:mm"));
+						$('#full-screen-clock').slideDown();
+						console.log('show');
+					}
+					else $('#full-screen-clock').slideUp();
+					
+					let jadwalDipake = app.jadwalHariIni;
+					let jadwalPlusIcon	= '';
+					//jika diatasa isya' pake jadwal besok
+					
+					// console.log(jamSekarang.format('YYYY-MM-DD HH:mm:ss'));
+					if(jamDelay > app.isha){
+						if(!app.jadwalBesok.fajr){
+							$('#jadwal').html('<div class="row"><div class="col-xs-12">Memuat jadwal sholat...</div></div>');
+							return;
+						}
+						jadwalDipake	= app.jadwalBesok;
+						jadwalPlusIcon	= '<span><i class="fa fa-plus" aria-hidden="true"></i></span>';
+						// console.log('besok');
+					}
 				$.each(app.db.prayName, function(k,v) {
 					// console.log(jamDelay.format('YYYY-MM-DD HH:mm:ss'));
 					let css= '';
@@ -454,11 +544,12 @@
 					jadwal += '<div class="row '+css+'"><div class="col-xs-5">'+v+'</div><div class="col-xs-7">'+jadwalDipake[k] + jadwalPlusIcon + '</div></div>';
 				});
 				$('#jadwal').html(jadwal);
-			},
-			displaySchedule: function(){
-				// console.log(app.getNextPray());
-				let waitAdzan		= moment().add(app.db.timer.wait_adzan,'minutes').format('YYYY-MM-DD HH:mm:ss');
-				let jamSekarang		= moment().format('YYYY-MM-DD HH:mm:ss');
+				},
+				displaySchedule: function(){
+					if(!app.jadwalHariIni.fajr) return;
+					// console.log(app.getNextPray());
+					let waitAdzan		= moment().add(app.db.timer.wait_adzan,'minutes').format('YYYY-MM-DD HH:mm:ss');
+					let jamSekarang		= moment().format('YYYY-MM-DD HH:mm:ss');
 				
 				// console.log(moment().add(5,'days').format('dddd'));
 				// console.log(waitAdzan);
@@ -499,11 +590,12 @@
 				// if (!app.countDownTimer) {
 					// app.runFullCountDown(jamSekarang,'IQOMAH');
 				// }
-			},
-			getNextPray	: function(){
-				let jamSekarang		= moment();
-				let nextPray		= 'fajr';
-				let jadwalDipake 	= false;
+				},
+				getNextPray	: function(){
+					if(!app.isJadwalReady()) return false;
+					let jamSekarang		= moment();
+					let nextPray		= 'fajr';
+					let jadwalDipake 	= false;
 				if(jamSekarang > app.isha){
 					jadwalDipake	= moment(app.jadwalBesok[nextPray],'HH:mm').add(1,'Day');
 					console.log('jadwal besok');
@@ -524,10 +616,11 @@
 				};
 			},
 			
-			showCountDownNextPray	: function(){
-				// $('#right-counter').html();
-				let nextPray		= app.getNextPray();
-				if (app.countDownTimer) return;//timer masih jalan
+				showCountDownNextPray	: function(){
+					// $('#right-counter').html();
+					let nextPray		= app.getNextPray();
+					if(!nextPray) return;
+					if (app.countDownTimer) return;//timer masih jalan
 				app.nextPrayCount	= 0;
 				console.log(moment(nextPray['date']).format('YYYY-MM-DD HH:mm:ss'));
 				app.countDownTimer	= setInterval(function(){

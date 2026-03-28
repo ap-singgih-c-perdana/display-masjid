@@ -647,6 +647,33 @@ Image credits: unsplash.com
 	height:100%;
 }
 
+#ppt-container{
+	position:absolute;
+	top:6vh;
+	right:2vw;
+	left:2vw;
+	bottom:17vh;
+}
+#ppt-container .ppt-frame-wrap{
+	position:relative;
+	width:100%;
+	height:100%;
+	border:0.25vw solid rgba(226,173,0,0.45);
+	border-radius:1.2vw;
+	box-shadow:0 0 2vw rgba(0,0,0,0.45);
+	overflow:hidden;
+	background:rgba(0,0,0,0.35);
+}
+#ppt-player{
+	position:absolute;
+	top:0;
+	left:0;
+	width:100%;
+	height:calc(100% + 4.2vw);
+	background:#fff;
+	border:0;
+}
+
 .quote-carousel {
     /* position: relative; */
 	/* background-color:rgba(255,255,0,0.3); */

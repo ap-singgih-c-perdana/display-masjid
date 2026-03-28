@@ -196,6 +196,10 @@ class proses extends fb{
 					'active'	=> false,
 					'url'		=> '',
 					'mute'		=> true
+				],
+				'ppt' => [
+					'active'	=> false,
+					'url'		=> ''
 				]
 			];
 			$myfile = fopen($file, "w") or $this->retError("Error Create File...");
@@ -210,6 +214,13 @@ class proses extends fb{
 				'active'	=> false,
 				'url'		=> '',
 				'mute'		=> true
+			];
+			$this->saveDatabase();
+		}
+		if(!isset($this->database['ppt']) || !is_array($this->database['ppt'])){
+			$this->database['ppt'] = [
+				'active'	=> false,
+				'url'		=> ''
 			];
 			$this->saveDatabase();
 		}
@@ -260,6 +271,12 @@ class proses extends fb{
 			$dt['mute']		= isset($dt['mute']) && $dt['mute']=='1';
 			$dt['url']		= trim($dt['url']);
 			if($dt['active'] && !$dt['url']) $this->retError('URL YouTube wajib diisi jika video diaktifkan...');
+			if(!$dt['active']) $dt['mute'] = true;
+		}
+		else if($id=='ppt'){
+			$dt['active']	= isset($dt['active']) && $dt['active']=='1';
+			$dt['url']		= trim($dt['url']);
+			if($dt['active'] && !$dt['url']) $this->retError('URL embed PPT wajib diisi jika mode PPT diaktifkan...');
 		}
 		else if($id=='prayTimesAdjust'){
 			$db['prayTimesMethod']	= $dt['prayTimesMethod'];
@@ -594,6 +611,39 @@ class proses extends fb{
 			<div class="row">
 			<div class="col-md-12 col-sm-12 col-xs-12">'.
 			$this->generateCompleteForm($formYoutube,$setYoutube).
+			'</div></div></section>';
+		$this->retSuccess();
+	}
+	
+	private function ppt(){
+		$db	= $this->database;
+		$arrActive = ['Ya' => 1, 'Tidak' => 0];
+		$formPpt = [
+			'aktif' => [
+				'name'	=> 'active',
+				'type'	=> 'select',
+				'arr'	=> $arrActive,
+				'value'	=> $db['ppt']['active']
+			],
+			'url embed ppt' => [
+				'name'			=> 'url',
+				'type'			=> 'text',
+				'maxlength'		=> 500,
+				'value'			=> $db['ppt']['url'],
+				'placeholder'	=> 'https://view.officeapps.live.com/op/embed.aspx?src=...',
+				'required'		=> false
+			]
+		];
+		$setPpt = [
+			'id'	=> 'ppt',
+			'title'	=> 'Embed PPT',
+			'info'	=> "- Running text tetap tampil seperti biasa di bagian bawah.\n- Mode ini menampilkan presentasi di area kanan sebagai alternatif info biasa.\n- Gunakan URL embed dari Microsoft Office Online atau Google Slides.\n- Jika YouTube dan PPT sama-sama aktif, YouTube yang diprioritaskan tampil."
+		];
+		$this->data = '
+			<section class="content-header content-dynamic">
+			<div class="row">
+			<div class="col-md-12 col-sm-12 col-xs-12">'.
+			$this->generateCompleteForm($formPpt,$setPpt).
 			'</div></div></section>';
 		$this->retSuccess();
 	}
