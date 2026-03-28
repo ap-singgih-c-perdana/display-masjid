@@ -28,4 +28,4 @@ jobs:
             .github
             .github/**
             db/**
-            logo/**
+            display/logo/**
