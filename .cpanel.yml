@@ -2,4 +2,6 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/sink4858/public_html/masjid-screen.singgihcp.com/
-    - /bin/rsync -av --delete --exclude ".git" --exclude "db" ./ $DEPLOYPATH
+    - /bin/cp -R display $DEPLOYPATH
+    - /bin/cp -R dist $DEPLOYPATH
+    - /bin/cp -R *.php $DEPLOYPATH
