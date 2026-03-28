@@ -249,7 +249,7 @@ class proses extends fb{
 	
 	private function saveDatabase(){
 		$file	= $this->file;
-		$myfile = fopen($file, "w") or $this->retError("Error Create File...");
+		$myfile = fopen($file, "w") or $this->retError("Error saveDatabase...");
 		fwrite($myfile, json_encode($this->database));
 		fclose($myfile);
 	}
