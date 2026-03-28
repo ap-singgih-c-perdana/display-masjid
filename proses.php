@@ -344,7 +344,7 @@ class proses extends fb{
 		if(empty($_FILES)) $this->retError('File logo belum dipilih...');
 		$dir = 'display/logo/';
 		if(!is_dir($dir) || !is_writable($dir)){
-			$this->retError('Folder logo tidak bisa ditulis. Cek permission folder: '.$dir);
+			$this->retError('Folder logo tidak bisa ditulis. Cek permission folder : '.$dir);
 		}
 		$allowed_ext =  array('png');
 		$uploaded = false;
