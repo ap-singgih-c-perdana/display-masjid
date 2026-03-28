@@ -18,10 +18,7 @@
 		setupYoutube: function(){
 			var app = this;
 			app.youtubeEmbedUrl = app.buildYoutubeEmbedUrl();
-			if(app.youtubeEmbedUrl){
-				$('#youtube-player').attr('src', app.youtubeEmbedUrl);
-				app.youtubeReady = true;
-			}
+			app.youtubeReady = !!app.youtubeEmbedUrl;
 			app.updateContentVisibility();
 		},
 
@@ -42,6 +39,27 @@
 			var showYoutube = app.isEnabled(youtube.active) && app.youtubeReady;
 			var ppt = app.db.ppt || {};
 			var showPpt = !showYoutube && app.isEnabled(ppt.active) && app.pptReady;
+			var $youtubePlayer = $('#youtube-player');
+			var $pptPlayer = $('#ppt-player');
+
+			if(showYoutube){
+				if($youtubePlayer.attr('src') !== app.youtubeEmbedUrl){
+					$youtubePlayer.attr('src', app.youtubeEmbedUrl);
+				}
+			}
+			else if($youtubePlayer.attr('src')){
+				$youtubePlayer.attr('src', '');
+			}
+
+			if(showPpt){
+				if($pptPlayer.attr('src') !== app.pptEmbedUrl){
+					$pptPlayer.attr('src', app.pptEmbedUrl);
+				}
+			}
+			else if($pptPlayer.attr('src')){
+				$pptPlayer.attr('src', '');
+			}
+
 			$('#youtube-container').toggle(showYoutube);
 			$('#ppt-container').toggle(showPpt);
 			$('#quote').toggle(!showYoutube && !showPpt);

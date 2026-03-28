@@ -28,7 +28,8 @@
 		jadwalHariIni: {},
 		jadwalBesok: {},
 		jadwalCache: {},
-		timer: false,
+		uiTimer: false,
+		dbCheckTimer: false,
 		adzanDisplayTimer: false,
 		activeCountdownTimer: false,
 		fullscreenMessageTimer: false,
@@ -53,11 +54,14 @@
 			app.primeJadwal();
 			document.addEventListener('fullscreenchange', app.handleFullscreenChange);
 			document.addEventListener('webkitfullscreenchange', app.handleFullscreenChange);
-			app.timer = setInterval(function(){ app.cekPerDetik(); }, 5000);
+			app.updateUi();
+			app.checkDatabaseChanges();
+			app.uiTimer = setInterval(function(){ app.updateUi(); }, 1000);
+			app.dbCheckTimer = setInterval(function(){ app.checkDatabaseChanges(); }, 5000);
 			$('#preloader').delay(350).fadeOut('slow');
 		},
 
-		cekPerDetik: function(){
+		updateUi: function(){
 			var app = this;
 			if(!app.tglHariIni || moment().format('YYYY-MM-DD') != moment(app.tglHariIni).format('YYYY-MM-DD')){
 				app.tglHariIni = moment();
@@ -67,7 +71,10 @@
 			app.syncJadwalAktif();
 			app.showJadwal();
 			app.displaySchedule();
+		},
 
+		checkDatabaseChanges: function(){
+			var app = this;
 			$.ajax({
 				type: 'POST',
 				url: '../proses.php',
