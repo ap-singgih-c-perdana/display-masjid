@@ -142,12 +142,12 @@ if (file_exists($file)){
       <!-- sidebar menu: : style can be found in sidebar.less -->
       <ul class="sidebar-menu" data-widget="tree">
         <li class="header">NAVIGATION</li>
-		<li><a href="/display/index.php" target="_blank" rel="noopener noreferrer"><i class="fa fa-external-link"></i> <span>Buka Display</span></a></li>
+		<li><a href="/display/index.php" target="_blank" rel="noopener noreferrer"><i class="fa fa-desktop"></i> <span>Buka Display</span></a></li>
 		<li class="active"><a data-target="info"><i class="fa fa-comment"></i> <span>Informasi</span></a></li>
 		<li><a data-target="running_text"><i class="fa fa-text-width"></i> <span>Running text</span></a></li>
 		<li><a data-target="youtube"><i class="fa fa-youtube-play"></i> <span>Video YouTube</span></a></li>
 		<li><a data-target="ppt"><i class="fa fa-file-powerpoint-o"></i> <span>Embed PPT</span></a></li>
-		<li><a data-target="wallpaper"><i class="fa fa-television"></i> <span>Wallpaper</span></a></li>
+		<li><a data-target="wallpaper"><i class="fa fa-image"></i> <span>Wallpaper</span></a></li>
 		<li><a data-target="timer"><i class="fa fa-clock-o"></i> <span>Timer</span></a></li>
 		<li><a data-target="jadwal"><i class="fa fa-calendar"></i> <span>Setting Jadwal</span></a></li>
 		<li><a data-target="simulasi"><i class="fa fa-history"></i> <span>Simulasi Jadwal</span></a></li>
