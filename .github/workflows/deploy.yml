@@ -22,7 +22,6 @@ jobs:
           port: 21
           protocol: ftp
           server-dir: public_html/masjid-screen.singgihcp.com/
-          dangerous-clean-slate: true
           exclude: |
             .git
             .git/**
