@@ -1,5 +1,10 @@
 (function(window, $){
 	$.extend(window.DisplayApp, {
+		restoreMainDisplay: function(){
+			$('#display-sholat, #display-khutbah, #display-adzan, #count-down, #right-counter').stop(true, true).hide();
+			this.updateContentVisibility();
+		},
+
 		playBeepWithDuration: function(durationMs){
 			var app = this;
 			if(app.activeBeepTimeout){
@@ -101,12 +106,18 @@
 		showDisplaySholat: function(prayKey){
 			var app = this;
 			if(!app.fullscreenMessageTimer){
-				var duration = (prayKey == 'isha' && app.db.tarawih.active) ? app.db.tarawih.duration : app.db.timer.sholat;
+				var useTarawihDuration = prayKey == 'isha' && app.isEnabled(app.db.tarawih.active);
+				var duration = useTarawihDuration ? app.db.tarawih.duration : app.db.timer.sholat;
 				$('#display-sholat').show();
 				app.fullscreenMessageTimer = setTimeout(function(){
 					$('#display-sholat').fadeOut();
 					app.fullscreenMessageTimer = false;
-					app.showCountDownNextPray();
+					if(prayKey == 'isha'){
+						app.restoreMainDisplay();
+					}
+					else{
+						app.showCountDownNextPray();
+					}
 				}, duration * 60 * 1000);
 			}
 		},
