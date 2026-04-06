@@ -592,7 +592,7 @@ Image credits: unsplash.com
 	height:100%;
 	overflow: hidden;
 	
-	font-family: 'Arial', Helvetica, Arial, sans-serif; 
+	font-family: 'Titillium Web', Helvetica, Arial, sans-serif; 
 	padding-top: 0.82vw;
 	font-size: 3.8vw;
 	font-weight: bold;
@@ -617,7 +617,7 @@ Image credits: unsplash.com
 	/* background-color: #f00; */
 	position:fixed;
 	/* bottom:-4vh; */
-	bottom:5.6vw;
+	bottom:8vw;
 	right:2vw;
 	/* background-color:#F00; */
 	/* background-image: url(../img/logo.png); */
@@ -702,13 +702,14 @@ Image credits: unsplash.com
     text-align: center;
     /* text-transform: uppercase; */
     text-shadow: 1px 1px 0 rgba(0,0,0,.75);
-	font-family: 'Arial', Helvetica, Arial, sans-serif;  
+	font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;  
 }
 
 .quote-carousel .text1{
 	text-transform: uppercase;
-	font-size: 4.6vw;
+	font-size: 4.2vw;
 	line-height: 1.1;
+	margin-bottom: 2.2vh;
 	color:#33cccc;
 	font-style: normal;
 }
@@ -733,7 +734,7 @@ Image credits: unsplash.com
 	font-size: 4vw;
 	line-height: 1.18;
 	position:relative;
-	font-style: normal;
+	font-style: italic;
 }
 .quote-carousel .text3:before{
 	display: block;
