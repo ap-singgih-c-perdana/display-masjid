@@ -2,6 +2,7 @@
 var app = {
 	//variable
 	db		: null,
+	testAudio	: null,
 	resetDevice: function(self){
 		var konfirm = prompt("Ketik 'KONFIRMASI' untuk melanjutkan");
 		if (konfirm == 'KONFIRMASI') {
@@ -79,6 +80,29 @@ var app = {
 			}
 		}).fail(function(msg){
 			alert(msg.status+"\n"+msg.statusText);
+		});
+	},
+	testBeep: function(self){
+		var $btn = $(self);
+		var btnText = $btn.html();
+		if(!app.testAudio){
+			app.testAudio = new Audio('display/img/beep.mp3');
+		}
+		var audio = app.testAudio;
+		$btn.html('<i class="fa fa-spinner fa-pulse"></i> Testing...').attr('disabled','disabled');
+		audio.pause();
+		audio.currentTime = 0;
+		audio.muted = false;
+		audio.volume = 1;
+		audio.load();
+		audio.play().then(function(){
+			$btn.html('<i class="fa fa-check"></i> Bunyi');
+			setTimeout(function(){
+				$btn.html(btnText).removeAttr('disabled');
+			}, 1200);
+		}).catch(function(){
+			alert('Audio tidak bisa diputar. Cek mute tab browser, izin sound/autoplay, dan output speaker.');
+			$btn.html(btnText).removeAttr('disabled');
 		});
 	},
 	loading: function(){

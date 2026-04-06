@@ -1521,6 +1521,7 @@ isha		= 18°
 				</div>
 				<div class="box-footer">
 					<button  class="btn btn-app" onclick="$('.sidebar-menu .active a').trigger('click')"><i class="fa fa-thermometer"></i> Refresh </button>
+					<button class="btn btn-app" onclick="app.testBeep(this)"><i class="fa fa-volume-up"></i> Test Beep</button>
 					<button class="btn btn-app pull-right" onclick="app.shutdown(this,'r')"><i class="fa fa-repeat"></i> Restart</button>
 					<button class="btn btn-app pull-right" onclick="app.shutdown(this,'s')"><i class="fa fa-power-off"></i> Shutdown</button>
 				</div>

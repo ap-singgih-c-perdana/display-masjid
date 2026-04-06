@@ -1,11 +1,57 @@
 (function(window, $){
 	$.extend(window.DisplayApp, {
+		playBeepWithDuration: function(durationMs){
+			var app = this;
+			if(app.activeBeepTimeout){
+				clearTimeout(app.activeBeepTimeout);
+				app.activeBeepTimeout = false;
+			}
+			app.audio.pause();
+			app.audio.currentTime = 0;
+			app.audio.play().then(function(){
+				app.audioUnlocked = true;
+				window.sessionStorage.setItem('displayMasjidAudioUnlocked', '1');
+				$('#enable-audio').fadeOut();
+			}).catch(function(){
+				if(!app.audioUnlocked){
+					app.audioUnlocked = false;
+					app.showAudioUnlockPrompt();
+				}
+				return false;
+			});
+			app.activeBeepTimeout = setTimeout(function(){
+				app.audio.pause();
+				app.audio.currentTime = 0;
+				app.activeBeepTimeout = false;
+			}, durationMs);
+		},
+
+		resetCountdownBeeps: function(){
+			this.countdownBeepMarks = {};
+			if(this.activeBeepTimeout){
+				clearTimeout(this.activeBeepTimeout);
+				this.activeBeepTimeout = false;
+			}
+			this.audio.pause();
+			this.audio.currentTime = 0;
+		},
+
+		playCountdownBeeps: function(distance){
+			var app = this;
+			if(distance > 0 && distance <= 5 && !app.countdownBeepMarks[distance]){
+				app.countdownBeepMarks[distance] = true;
+				if(distance == 1) app.playBeepWithDuration(900);
+				else app.playBeepWithDuration(220);
+			}
+		},
+
 		showCountDownNextPray: function(){
 			var app = this;
 			var nextPray = app.getNextPray();
 			if(!nextPray) return;
 			if(app.activeCountdownTimer) return;
 			app.nextPrayCountdownTicks = 0;
+			app.resetCountdownBeeps();
 			app.activeCountdownTimer = setInterval(function(){
 				var t = app.countDownCalculate(nextPray.date);
 
@@ -68,6 +114,7 @@
 		runFullCountDown: function(jam, title, runDisplaySholat, prayKey){
 			var app = this;
 			if(app.activeCountdownTimer) return;
+			app.resetCountdownBeeps();
 			app.activeCountdownTimer = setInterval(function(){
 				var t = app.countDownCalculate(jam);
 
@@ -77,16 +124,11 @@
 				$('#count-down .counter>.ss').html(t.seconds + '<span>' + app.db.timeName.Seconds + '</span>');
 
 				$('#count-down').fadeIn();
-				if(t.distance == 5){
-					app.audio.play().then(function(){
-						return true;
-					}).catch(function(){
-						return false;
-					});
-				}
+				app.playCountdownBeeps(t.distance);
 				if(t.distance < 1){
 					clearInterval(app.activeCountdownTimer);
 					app.activeCountdownTimer = false;
+					app.resetCountdownBeeps();
 					$('#count-down').fadeOut();
 					if(runDisplaySholat){
 						app.showDisplaySholat(prayKey);
@@ -98,6 +140,7 @@
 		runRightCountDown: function(jam, title){
 			var app = this;
 			if(app.activeCountdownTimer) return;
+			app.resetCountdownBeeps();
 			app.activeCountdownTimer = setInterval(function(){
 				var t = app.countDownCalculate(jam);
 
@@ -108,10 +151,12 @@
 
 				$('#right-counter').slideDown();
 				$('#quote, #youtube-container, #ppt-container').hide();
+				app.playCountdownBeeps(t.distance);
 
 				if(t.distance < 1){
 					clearInterval(app.activeCountdownTimer);
 					app.activeCountdownTimer = false;
+					app.resetCountdownBeeps();
 					$('#right-counter').fadeOut();
 					app.updateContentVisibility();
 				}
@@ -119,7 +164,8 @@
 		},
 
 		countDownCalculate: function(jam){
-			var jamSekarang = moment();
+			var app = this;
+			var jamSekarang = app.debugTime ? app.debugTime.clone() : moment();
 			var distance = Math.round(jam.diff(jamSekarang, 'seconds', true));
 			var hours = Math.floor((distance % (60 * 60 * 24)) / (60 * 60));
 			var minutes = Math.floor((distance % (60 * 60)) / 60);

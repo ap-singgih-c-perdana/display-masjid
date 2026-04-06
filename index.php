@@ -180,6 +180,6 @@ if (file_exists($file)){
 	<script src="dist/js/dataTables.buttons.min.js"></script>
 	<script src="dist/js/buttons.html5.min.js"></script>
 	<script src="display/js/PrayTimes.js"></script>
-	<script src="dist/js/fn.js"></script>
+	<script src="dist/js/fn.js?v=<?=filemtime('dist/js/fn.js')?>"></script>
 </body>
 </html>
