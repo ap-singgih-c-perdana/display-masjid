@@ -119,7 +119,7 @@ class proses extends fb{
 				'Seconds'	=> 'Detik',
 			],
 			'dayName'	=> [
-				'Sunday'	=> 'Minggu',
+				'Sunday'	=> 'Ahad',
 				'Monday'	=> 'Senin',
 				'Tuesday'	=> 'Selasa',
 				'Wednesday'	=> 'Rabu',
