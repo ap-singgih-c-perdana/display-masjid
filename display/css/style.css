@@ -545,8 +545,8 @@ Image credits: unsplash.com
 	display: block;
 	content: "";
 	position:absolute;
-	height:3.5vw;
-	width:5vw;
+	height:6.5vw;
+	width:7.8vw;
 	top: 0;
 	left:0;
 	background-color:#e2ad00;
@@ -558,7 +558,7 @@ Image credits: unsplash.com
 	
 }
 #running-text{
-	height:3.5vw;
+	height:6.5vw;
 	width:70vw;
 	color:#fff;
 	/* margin:3vh 3vw 4vh 3vw; */
@@ -582,19 +582,20 @@ Image credits: unsplash.com
 	color:#e2ad00;
 	margin-left: 20px;
 	margin-right: 7px;
-	font-size: 2vw;
+	font-size: 3.5vw;
 	
 }
 #running-text .item{
 	position: absolute;
-	left: 5.5vw;
-	right: 0.5vw;
+	left: 8.7vw;
+	right: 0.8vw;
 	height:100%;
 	overflow: hidden;
 	
-	font-family: 'Titillium Web', 'OpenSansCondLight', Helvetica, Arial, sans-serif; 
-	padding-top: 0.3vw;
-	font-size: 2.1vw;
+	font-family: 'Arial', Helvetica, Arial, sans-serif; 
+	padding-top: 0.82vw;
+	font-size: 3.8vw;
+	font-weight: bold;
 	white-space: nowrap;
 }
 
@@ -689,24 +690,27 @@ Image credits: unsplash.com
 .quote-carousel .carousel-inner .item .hero {
     color: #fff;
     position: absolute;
-    top: 40%;
+    top: 38%;
     left: 50%;
 	transform: translate(-50%,-50%);
     /* z-index: 3; */
     color: #fff;
 	/* background-color:#f00; */
 	width: 100%;
-	padding: 0 3vw;
-    text-align: right;
+	max-width: 72vw;
+	padding: 0 2.5vw;
+    text-align: center;
     /* text-transform: uppercase; */
     text-shadow: 1px 1px 0 rgba(0,0,0,.75);
-	font-family: 'OpenSansCondLight', 'Titillium Web', Helvetica, Arial, sans-serif;  
+	font-family: 'Arial', Helvetica, Arial, sans-serif;  
 }
 
 .quote-carousel .text1{
 	text-transform: uppercase;
-	font-size: 3.3vw;
+	font-size: 4.6vw;
+	line-height: 1.1;
 	color:#33cccc;
+	font-style: normal;
 }
 /* .quote-carousel .text2:before{
 	display: block;
@@ -726,9 +730,10 @@ Image credits: unsplash.com
 } */
 
 .quote-carousel .text2{
-	font-size: 2.9vw;
+	font-size: 4vw;
+	line-height: 1.18;
 	position:relative;
-	font-style:italic;
+	font-style: normal;
 }
 .quote-carousel .text3:before{
 	display: block;
@@ -737,16 +742,18 @@ Image credits: unsplash.com
 	height:1vw;
 	width:10vw;
 	top: -1vw;
-	right:0vw;
+	left:50%;
+	transform:translateX(-50%);
 	/* background-color:#e2ad0055; */
 	background-image: url(../img/hadist-line.png);
 	background-size: contain;
-	background-position: right center;
+	background-position: center center;
 	background-repeat: no-repeat;
 }
 .quote-carousel .text3{
-	margin-top:3vh;
-	font-size: 1.5vw;
+	margin-top:4vh;
+	font-size: 2.2vw;
+	line-height: 1.25;
 	font-style: italic;
 	position:relative;
 }
