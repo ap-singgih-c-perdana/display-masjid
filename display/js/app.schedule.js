@@ -117,10 +117,10 @@
 				else if(jadwal == jamSekarang) app.showDisplayAdzan(v);
 				else if(stIqomah == jamSekarang){
 					if(moment().format('dddd') == 'Friday' && app.db.jumat.active && k == 'dhuhr'){
-						app.showDisplayKhutbah();
+						app.showDisplayKhutbah(k);
 					}
 					else {
-						app.runFullCountDown(enIqomah, 'IQOMAH', true);
+						app.runFullCountDown(enIqomah, 'IQOMAH', true, k);
 					}
 				}
 			});

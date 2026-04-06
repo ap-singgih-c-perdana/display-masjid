@@ -39,24 +39,23 @@
 			}
 		},
 
-		showDisplayKhutbah: function(){
+		showDisplayKhutbah: function(prayKey){
 			var app = this;
 			if(!app.fullscreenMessageTimer){
 				$('#display-khutbah>div').text(app.db.jumat.text);
 				$('#display-khutbah').show();
 				app.fullscreenMessageTimer = setTimeout(function(){
 					app.fullscreenMessageTimer = false;
-					app.showDisplaySholat();
+					app.showDisplaySholat(prayKey);
 					$('#display-khutbah').fadeOut();
 				}, app.db.jumat.duration * 60 * 1000);
 			}
 		},
 
-		showDisplaySholat: function(){
+		showDisplaySholat: function(prayKey){
 			var app = this;
 			if(!app.fullscreenMessageTimer){
-				var jamSekarang = moment();
-				var duration = (jamSekarang > app.isha && app.db.tarawih.active) ? app.db.tarawih.duration : app.db.timer.sholat;
+				var duration = (prayKey == 'isha' && app.db.tarawih.active) ? app.db.tarawih.duration : app.db.timer.sholat;
 				$('#display-sholat').show();
 				app.fullscreenMessageTimer = setTimeout(function(){
 					$('#display-sholat').fadeOut();
@@ -66,7 +65,7 @@
 			}
 		},
 
-		runFullCountDown: function(jam, title, runDisplaySholat){
+		runFullCountDown: function(jam, title, runDisplaySholat, prayKey){
 			var app = this;
 			if(app.activeCountdownTimer) return;
 			app.activeCountdownTimer = setInterval(function(){
@@ -90,7 +89,7 @@
 					app.activeCountdownTimer = false;
 					$('#count-down').fadeOut();
 					if(runDisplaySholat){
-						app.showDisplaySholat();
+						app.showDisplaySholat(prayKey);
 					}
 				}
 			}, 1000);
