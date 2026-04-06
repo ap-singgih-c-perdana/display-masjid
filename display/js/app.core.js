@@ -34,6 +34,8 @@
 		activeCountdownTimer: false,
 		fullscreenMessageTimer: false,
 		nextPrayCountdownTicks: 0,
+		countdownBeepMarks: {},
+		activeBeepTimeout: false,
 		pendingReload: false,
 		youtubeReady: false,
 		youtubeEmbedUrl: '',
@@ -45,9 +47,13 @@
 		maghrib: '',
 		isha: '',
 		audio: new Audio('img/beep.mp3'),
+		audioUnlocked: false,
+		debugTime: null,
 
 		initialize: function(){
 			var app = this;
+			app.initDebugTime();
+			app.initAudioUnlock();
 			app.initRunningText();
 			app.setupYoutube();
 			app.setupPpt();
@@ -61,16 +67,76 @@
 			$('#preloader').delay(350).fadeOut('slow');
 		},
 
+		initAudioUnlock: function(){
+			var app = this;
+			if(window.sessionStorage.getItem('displayMasjidAudioUnlocked') === '1'){
+				app.audioUnlocked = true;
+			}
+			$('#enable-audio').hide();
+			$(document).one('pointerdown mousedown touchstart click keydown', function(){
+				if(!app.audioUnlocked){
+					app.unlockAudio();
+				}
+			});
+		},
+
+		unlockAudio: function(){
+			var app = this;
+			app.audio.pause();
+			app.audio.currentTime = 0;
+			app.audio.muted = false;
+			app.audio.volume = 1;
+			app.audio.play().then(function(){
+				app.audioUnlocked = true;
+				window.sessionStorage.setItem('displayMasjidAudioUnlocked', '1');
+				$('#enable-audio').fadeOut();
+				setTimeout(function(){
+					app.audio.pause();
+					app.audio.currentTime = 0;
+				}, 120);
+			}).catch(function(){
+				if(!app.audioUnlocked){
+					app.audioUnlocked = false;
+					app.showAudioUnlockPrompt();
+				}
+			});
+		},
+
+		showAudioUnlockPrompt: function(){
+			return false;
+		},
+
+		initDebugTime: function(){
+			var app = this;
+			var params = new URLSearchParams(window.location.search);
+			var debugTime = params.get('debug_time');
+			if(debugTime){
+				var parsed = moment(debugTime, ['YYYY-MM-DD HH:mm:ss', 'YYYY-MM-DDTHH:mm:ss', 'YYYY-MM-DD HH:mm', 'YYYY-MM-DDTHH:mm'], true);
+				if(parsed.isValid()){
+					app.debugTime = parsed;
+				}
+			}
+		},
+
+		now: function(){
+			var app = this;
+			if(!app.debugTime) return moment();
+			var current = app.debugTime.clone();
+			app.debugTime.add(1, 'seconds');
+			return current;
+		},
+
 		updateUi: function(){
 			var app = this;
-			if(!app.tglHariIni || moment().format('YYYY-MM-DD') != moment(app.tglHariIni).format('YYYY-MM-DD')){
-				app.tglHariIni = moment();
-				app.tglBesok = moment().add(1, 'days');
+			var now = app.now();
+			if(!app.tglHariIni || now.format('YYYY-MM-DD') != moment(app.tglHariIni).format('YYYY-MM-DD')){
+				app.tglHariIni = now.clone();
+				app.tglBesok = now.clone().add(1, 'days');
 				app.primeJadwal();
 			}
 			app.syncJadwalAktif();
-			app.showJadwal();
-			app.displaySchedule();
+			app.showJadwal(now.clone());
+			app.displaySchedule(now.clone());
 		},
 
 		checkDatabaseChanges: function(){

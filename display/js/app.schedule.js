@@ -1,5 +1,11 @@
 (function(window, $){
 	$.extend(window.DisplayApp, {
+		buildPrayerMoment: function(baseDate, timeValue){
+			if(!baseDate || !timeValue) return moment.invalid();
+			var datePart = moment(baseDate).format('YYYY-MM-DD');
+			return moment(datePart + ' ' + timeValue, 'YYYY-MM-DD HH:mm');
+		},
+
 		primeJadwal: function(){
 			var app = this;
 			var hariIni = app.tglHariIni ? moment(app.tglHariIni) : moment();
@@ -39,11 +45,11 @@
 			var besokKey = app.getDateKey(app.tglBesok || moment().add(1, 'days'));
 			if(app.jadwalCache[hariIniKey]){
 				app.jadwalHariIni = app.jadwalCache[hariIniKey].times;
-				app.fajr = moment(app.jadwalHariIni.fajr, 'HH:mm');
-				app.dhuhr = moment(app.jadwalHariIni.dhuhr, 'HH:mm');
-				app.asr = moment(app.jadwalHariIni.asr, 'HH:mm');
-				app.maghrib = moment(app.jadwalHariIni.maghrib, 'HH:mm');
-				app.isha = moment(app.jadwalHariIni.isha, 'HH:mm');
+				app.fajr = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni.fajr);
+				app.dhuhr = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni.dhuhr);
+				app.asr = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni.asr);
+				app.maghrib = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni.maghrib);
+				app.isha = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni.isha);
 			}
 			if(app.jadwalCache[besokKey]){
 				app.jadwalBesok = app.jadwalCache[besokKey].times;
@@ -55,10 +61,10 @@
 			return !!(app.jadwalHariIni.fajr && app.jadwalBesok.fajr);
 		},
 
-		showJadwal: function(){
+		showJadwal: function(now){
 			var app = this;
-			var jamSekarang = moment();
-			var jamDelay = moment().subtract(5, 'minutes');
+			var jamSekarang = now || app.now();
+			var jamDelay = jamSekarang.clone().subtract(5, 'minutes');
 			var jadwal = '';
 			var hari = app.db.dayName[jamSekarang.format('dddd')];
 			var bulan = app.db.monthName[jamSekarang.format('MMMM')];
@@ -101,11 +107,12 @@
 			$('#jadwal').html(jadwal);
 		},
 
-		displaySchedule: function(){
+		displaySchedule: function(now){
 			var app = this;
 			if(!app.jadwalHariIni.fajr) return;
-			var waitAdzan = moment().add(app.db.timer.wait_adzan, 'minutes').format('YYYY-MM-DD HH:mm:ss');
-			var jamSekarang = moment().format('YYYY-MM-DD HH:mm:ss');
+			var jamAcuan = now || app.now();
+			var waitAdzan = jamAcuan.clone().add(app.db.timer.wait_adzan, 'minutes').format('YYYY-MM-DD HH:mm:ss');
+			var jamSekarang = jamAcuan.format('YYYY-MM-DD HH:mm:ss');
 
 			$.each(app.db.prayName, function(k, v){
 				var t = moment(app[k]);
@@ -116,11 +123,11 @@
 				if(waitAdzan == jadwal) app.runRightCountDown(app[k], 'Menuju ' + v);
 				else if(jadwal == jamSekarang) app.showDisplayAdzan(v);
 				else if(stIqomah == jamSekarang){
-					if(moment().format('dddd') == 'Friday' && app.db.jumat.active && k == 'dhuhr'){
-						app.showDisplayKhutbah();
+					if(jamAcuan.format('dddd') == 'Friday' && app.db.jumat.active && k == 'dhuhr'){
+						app.showDisplayKhutbah(k);
 					}
 					else {
-						app.runFullCountDown(enIqomah, 'IQOMAH', true);
+						app.runFullCountDown(enIqomah, 'IQOMAH', true, k);
 					}
 				}
 			});
@@ -129,11 +136,11 @@
 		getNextPray: function(){
 			var app = this;
 			if(!app.isJadwalReady()) return false;
-			var jamSekarang = moment();
+			var jamSekarang = app.debugTime ? app.debugTime.clone() : moment();
 			var nextPray = 'fajr';
 			var jadwalDipake = false;
 			if(jamSekarang > app.isha){
-				jadwalDipake = moment(app.jadwalBesok[nextPray], 'HH:mm').add(1, 'Day');
+				jadwalDipake = app.buildPrayerMoment(app.tglBesok, app.jadwalBesok[nextPray]);
 			}
 			else{
 				$.each(app.db.prayName, function(k){
@@ -142,7 +149,7 @@
 						return false;
 					}
 				});
-				jadwalDipake = moment(app.jadwalHariIni[nextPray], 'HH:mm');
+				jadwalDipake = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni[nextPray]);
 			}
 			return {
 				pray: nextPray,
