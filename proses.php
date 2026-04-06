@@ -119,7 +119,7 @@ class proses extends fb{
 				'Seconds'	=> 'Detik',
 			],
 			'dayName'	=> [
-				'Sunday'	=> 'Minggu',
+				'Sunday'	=> 'Ahad',
 				'Monday'	=> 'Senin',
 				'Tuesday'	=> 'Selasa',
 				'Wednesday'	=> 'Rabu',
@@ -469,7 +469,7 @@ class proses extends fb{
 				<div class="box-body">
 					<div class="input-group">
 					  <span class="input-group-addon">Header</span>
-					  <input name="r1" type="text" maxlength="100" class="form-control" value="<?=$v[0]?>" required>
+					  <input name="r1" type="text" maxlength="100" class="form-control" value="<?=$v[0]?>" placeholder="boleh dikosongkan">
 					</div>
 					<div class="input">
 					  <textarea name="r2" maxlength="255" rows="3" class="form-control" ><?=$v[1]?></textarea>
