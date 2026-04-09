@@ -46,6 +46,7 @@
 			if(app.jadwalCache[hariIniKey]){
 				app.jadwalHariIni = app.jadwalCache[hariIniKey].times;
 				app.fajr = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni.fajr);
+				app.sunrise = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni.sunrise);
 				app.dhuhr = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni.dhuhr);
 				app.asr = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni.asr);
 				app.maghrib = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni.maghrib);
@@ -95,12 +96,14 @@
 				jadwalPlusIcon = '<span><i class="fa fa-plus" aria-hidden="true"></i></span>';
 			}
 
-			$.each(app.db.prayName, function(k, v){
+			$.each(app.getDisplayPrayKeys(), function(_, k){
+				var v = app.db.prayName[k];
 				var css = '';
 				if(k == 'isha' && jamDelay < app.isha && jamDelay > app.maghrib) css = 'active';
 				else if(k == 'maghrib' && jamDelay < app.maghrib && jamDelay > app.asr) css = 'active';
 				else if(k == 'asr' && jamDelay < app.asr && jamDelay > app.dhuhr) css = 'active';
-				else if(k == 'dhuhr' && jamDelay < app.dhuhr && jamDelay > app.fajr) css = 'active';
+				else if(k == 'dhuhr' && jamDelay < app.dhuhr && jamDelay > app.sunrise) css = 'active';
+				else if(k == 'sunrise' && jamDelay < app.sunrise && jamDelay > app.fajr) css = 'active';
 				else if(k == 'fajr' && (jamDelay < app.fajr || jamDelay > app.isha)) css = 'active';
 				jadwal += '<div class="row ' + css + '"><div class="col-xs-5">' + v + '</div><div class="col-xs-7">' + jadwalDipake[k] + jadwalPlusIcon + '</div></div>';
 			});
@@ -114,9 +117,14 @@
 			var waitAdzan = jamAcuan.clone().add(app.db.timer.wait_adzan, 'minutes').format('YYYY-MM-DD HH:mm:ss');
 			var jamSekarang = jamAcuan.format('YYYY-MM-DD HH:mm:ss');
 
-			$.each(app.db.prayName, function(k, v){
+			$.each(app.getCountdownPrayKeys(), function(_, k){
+				var v = app.db.prayName[k];
 				var t = moment(app[k]);
 				var jadwal = t.format('YYYY-MM-DD HH:mm:ss');
+				if(k == 'sunrise'){
+					if(waitAdzan == jadwal) app.runRightCountDown(app[k], 'Menuju ' + v);
+					return;
+				}
 				var stIqomah = t.add(app.db.timer.adzan, 'minutes').format('YYYY-MM-DD HH:mm:ss');
 				var enIqomah = moment(stIqomah, 'YYYY-MM-DD HH:mm:ss').add(app.db.iqomah[k], 'minutes');
 
@@ -143,11 +151,11 @@
 				jadwalDipake = app.buildPrayerMoment(app.tglBesok, app.jadwalBesok[nextPray]);
 			}
 			else{
-				$.each(app.db.prayName, function(k){
-					if(jamSekarang < app[k]){
-						nextPray = k;
-						return false;
-					}
+					$.each(app.getCountdownPrayKeys(), function(_, k){
+						if(jamSekarang < app[k]){
+							nextPray = k;
+							return false;
+						}
 				});
 				jadwalDipake = app.buildPrayerMoment(app.tglHariIni, app.jadwalHariIni[nextPray]);
 			}
