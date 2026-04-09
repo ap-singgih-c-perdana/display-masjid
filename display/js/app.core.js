@@ -42,6 +42,7 @@
 		pptReady: false,
 		pptEmbedUrl: '',
 		fajr: '',
+		sunrise: '',
 		dhuhr: '',
 		asr: '',
 		maghrib: '',
@@ -172,6 +173,18 @@
 
 		isEnabled: function(value){
 			return value === true || value === 1 || value === '1';
+		},
+
+		getDisplayPrayKeys: function(){
+			return Object.keys(this.db.prayName || {});
+		},
+
+		getMainPrayKeys: function(){
+			return ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+		},
+
+		getCountdownPrayKeys: function(){
+			return ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
 		}
 	};
 })(window, jQuery);

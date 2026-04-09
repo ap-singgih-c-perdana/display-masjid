@@ -101,6 +101,7 @@ class proses extends fb{
 			],
 			'prayTimesTune'	=> [
 				'fajr'		=> 0,
+				'sunrise'	=> 0,
 				'dhuhr'		=> 0,
 				'asr'		=> 0,
 				'maghrib'	=> 0,
@@ -108,6 +109,7 @@ class proses extends fb{
 			],
 			'prayName'	=> [
 				'fajr'		=> 'Subuh',
+				'sunrise'	=> 'Syruq',
 				'dhuhr'		=> 'Dzuhur',
 				'asr'		=> 'Ashar',
 				'maghrib'	=> 'Maghrib',
@@ -229,6 +231,46 @@ class proses extends fb{
 				'active'	=> false,
 				'url'		=> ''
 			];
+			$this->saveDatabase();
+		}
+		$needsSave = false;
+		if(!isset($this->database['prayName']) || !is_array($this->database['prayName'])){
+			$this->database['prayName'] = $this->defaultDatabase()['prayName'];
+			$needsSave = true;
+		}
+		if(!isset($this->database['prayTimesTune']) || !is_array($this->database['prayTimesTune'])){
+			$this->database['prayTimesTune'] = $this->defaultDatabase()['prayTimesTune'];
+			$needsSave = true;
+		}
+		if(!isset($this->database['prayName']['sunrise'])){
+			$prayName = [];
+			foreach($this->database['prayName'] as $key => $value){
+				$prayName[$key] = $value;
+				if($key == 'fajr'){
+					$prayName['sunrise'] = 'Syruq';
+				}
+			}
+			if(!isset($prayName['sunrise'])){
+				$prayName['sunrise'] = 'Syruq';
+			}
+			$this->database['prayName'] = $prayName;
+			$needsSave = true;
+		}
+		if(!isset($this->database['prayTimesTune']['sunrise'])){
+			$prayTimesTune = [];
+			foreach($this->database['prayTimesTune'] as $key => $value){
+				$prayTimesTune[$key] = $value;
+				if($key == 'fajr'){
+					$prayTimesTune['sunrise'] = 0;
+				}
+			}
+			if(!isset($prayTimesTune['sunrise'])){
+				$prayTimesTune['sunrise'] = 0;
+			}
+			$this->database['prayTimesTune'] = $prayTimesTune;
+			$needsSave = true;
+		}
+		if($needsSave){
 			$this->saveDatabase();
 		}
 		// echo '<pre>'.print_r($this->database,1).'</pre>';
