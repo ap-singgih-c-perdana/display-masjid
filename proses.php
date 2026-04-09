@@ -147,6 +147,7 @@ class proses extends fb{
 				'info'		=> 5,
 				'wallpaper'	=> 15,
 				'wait_adzan'=> 1,
+				'countdown_alarm' => 5,
 				'adzan'		=> 3,
 				'sholat'	=> 20
 			],
@@ -234,6 +235,24 @@ class proses extends fb{
 			$this->saveDatabase();
 		}
 		$needsSave = false;
+		if(!isset($this->database['timer']) || !is_array($this->database['timer'])){
+			$this->database['timer'] = $this->defaultDatabase()['timer'];
+			$needsSave = true;
+		}
+		if(!isset($this->database['timer']['countdown_alarm'])){
+			$timer = [];
+			foreach($this->database['timer'] as $key => $value){
+				$timer[$key] = $value;
+				if($key == 'wait_adzan'){
+					$timer['countdown_alarm'] = 5;
+				}
+			}
+			if(!isset($timer['countdown_alarm'])){
+				$timer['countdown_alarm'] = 5;
+			}
+			$this->database['timer'] = $timer;
+			$needsSave = true;
+		}
 		if(!isset($this->database['prayName']) || !is_array($this->database['prayName'])){
 			$this->database['prayName'] = $this->defaultDatabase()['prayName'];
 			$needsSave = true;
@@ -730,23 +749,28 @@ class proses extends fb{
 		//timer
 		$timer		= $db['timer'];
 		$formTimer	= [];
-		foreach($timer as $k => $v){
-			$formTimer[$k]	= [
-				'type'	=> 'number',
-				'min'	=> 1,
-				'max'	=> 180,
+			foreach($timer as $k => $v){
+				$formTimer[$k]	= [
+					'type'	=> 'number',
+					'min'	=> 1,
+					'max'	=> 180,
 				'step'	=> 1,
 				'value'	=> $v,
 				'placeholder'	=> '1-180',
 				'required'	=> true,
 				'addon'	=> 'menit'
 			];
-			if($k=='info'||$k=='wallpaper'){
-				$formTimer[$k]['max']			= 86400;
-				$formTimer[$k]['addon']			= 'detik';
-				$formTimer[$k]['placeholder']	= '1-86400';
+				if($k=='info'||$k=='wallpaper'){
+					$formTimer[$k]['max']			= 86400;
+					$formTimer[$k]['addon']			= 'detik';
+					$formTimer[$k]['placeholder']	= '1-86400';
+				}
+				else if($k=='countdown_alarm'){
+					$formTimer[$k]['max']			= 60;
+					$formTimer[$k]['addon']			= 'detik';
+					$formTimer[$k]['placeholder']	= '1-60';
+				}
 			}
-		}
 		$setTimer	= [
 			'id'=>'timer',
 			'title'=>'Timer'

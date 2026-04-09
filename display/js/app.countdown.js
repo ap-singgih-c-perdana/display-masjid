@@ -43,7 +43,11 @@
 
 		playCountdownBeeps: function(distance){
 			var app = this;
-			if(distance > 0 && distance <= 5 && !app.countdownBeepMarks[distance]){
+			var countdownAlarmSeconds = parseInt(app.db.timer.countdown_alarm, 10);
+			if(isNaN(countdownAlarmSeconds) || countdownAlarmSeconds < 1){
+				countdownAlarmSeconds = 5;
+			}
+			if(distance > 0 && distance <= countdownAlarmSeconds && !app.countdownBeepMarks[distance]){
 				app.countdownBeepMarks[distance] = true;
 				if(distance == 1) app.playBeepWithDuration(900);
 				else app.playBeepWithDuration(220);
