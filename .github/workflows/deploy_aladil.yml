@@ -1,0 +1,32 @@
+name: Deploy via FTP
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  ftp-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: List root dir
+        run: ls -la
+      - name: Deploy to FTP
+        uses: samkirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER_ALADIL }}
+          username: ${{ secrets.FTP_USERNAME_ALADIL }}
+          password: ${{ secrets.FTP_PASSWORD_ALADIL }}
+          port: 21
+          protocol: ftp
+          server-dir: public_html/tv.masjidaladil.com/
+          exclude: |
+            .git
+            .git/**
+            .github
+            .github/**
+            db/**
+            display/logo/**
