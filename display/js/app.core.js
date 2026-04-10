@@ -198,6 +198,9 @@
 			$('.quote-carousel').on('slid.bs.carousel', function(){
 				app.fitQuoteSlides();
 			});
+			$('.quote-carousel .quote-image').on('load', function(){
+				app.fitQuoteSlides();
+			});
 			$(window).on('load', function(){
 				app.fitQuoteSlides();
 			});

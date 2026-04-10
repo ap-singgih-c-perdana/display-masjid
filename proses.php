@@ -342,7 +342,13 @@ class proses extends fb{
 		unset($dt['formId']);
 		unset($dt['index']);
 		
-		if($id=='info')	$dt	= [$dt['r1'],$dt['r2'],$dt['r3'],$dt['active']];
+		if($id=='info'){
+			$image = '';
+			if($index !== 'new' && isset($db[$id][$index][4])){
+				$image = $db[$id][$index][4];
+			}
+			$dt	= [$dt['r1'],$dt['r2'],$dt['r3'],$dt['active'],$image];
+		}
 		else if($id=='running_text')	$dt	= $dt['text'];
 		else if($id=='youtube'){
 			$dt['active']	= isset($dt['active']) && $dt['active']=='1';
@@ -385,6 +391,74 @@ class proses extends fb{
 		// unset($db['akses']);//proteksi biar user/password gak kebaca 
 		// $this->data = $db;
 		$this->database = array_merge($this->database,$db);
+		$this->saveDatabase();
+		$this->retSuccess();
+	}
+
+	private function getInfoImage($index){
+		if(!isset($this->database['info'][$index][4])) return '';
+		return $this->database['info'][$index][4];
+	}
+
+	private function saveInfoImage(){
+		if(empty($_FILES)) $this->retError('File gambar belum dipilih...');
+		if(!isset($_POST['index']) || !is_numeric($_POST['index'])) $this->retError('Index informasi tidak valid...');
+
+		$index = (int) $_POST['index'];
+		if(!isset($this->database['info'][$index])) $this->retError('Data informasi tidak ditemukan...');
+
+		$dir = 'display/info/';
+		if(!is_dir($dir) || !is_writable($dir)){
+			$this->retError('Folder info tidak bisa ditulis. Cek permission folder: '.$dir);
+		}
+
+		$allowed_ext = array('jpg','jpeg','png','webp');
+		$uploaded = false;
+		foreach($_FILES as $file){
+			if($file['size'] > 0){
+				$uploaded = true;
+				$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+				if(!in_array($ext, $allowed_ext)){
+					$this->retError($file['name']." tidak didukung\nExt yang diperbolehkan : ".implode(", ",$allowed_ext));
+				}
+				if($file['size'] > 3000000){
+					$this->retError($file['name'].' lebih > 3Mb');
+				}
+
+				$oldImage = $this->getInfoImage($index);
+				if($oldImage && file_exists($dir.$oldImage) && !unlink($dir.$oldImage)){
+					$this->retError('Gambar lama tidak bisa dihapus. Cek permission folder info.');
+				}
+
+				$targetName = 'info-'.time().'-'.$index.'.'.$ext;
+				if(!move_uploaded_file($file['tmp_name'], $dir.$targetName)){
+					$this->retError('Gagal upload gambar ke folder tujuan. Cek permission folder: '.$dir);
+				}
+
+				$this->database['info'][$index][4] = $targetName;
+				$this->saveDatabase();
+				$this->retSuccess();
+			}
+		}
+
+		if(!$uploaded) $this->retError('File gambar belum dipilih...');
+	}
+
+	private function deleteInfoImage(){
+		if(!isset($this->dt['index']) || !is_numeric($this->dt['index'])) $this->retError('Index informasi tidak valid...');
+
+		$index = (int) $this->dt['index'];
+		if(!isset($this->database['info'][$index])) $this->retError('Data informasi tidak ditemukan...');
+
+		$dir = 'display/info/';
+		$image = $this->getInfoImage($index);
+		if(!$image) $this->retError('Gambar tidak ditemukan...');
+
+		if(file_exists($dir.$image) && !unlink($dir.$image)){
+			$this->retError('Gagal menghapus file gambar. Cek permission folder: '.$dir);
+		}
+
+		$this->database['info'][$index][4] = '';
 		$this->saveDatabase();
 		$this->retSuccess();
 	}
@@ -484,6 +558,12 @@ class proses extends fb{
 			$this->retError("Minimal harus ada 1 data...");
 		}
 		else{
+			if($id == 'info' && isset($db[$id][$index][4]) && $db[$id][$index][4]){
+				$image = 'display/info/'.$db[$id][$index][4];
+				if(file_exists($image)){
+					@unlink($image);
+				}
+			}
 			unset($db[$id][$index]);
 			$db[$id] = array_values($db[$id]);//re-index
 			$this->database = $db;
@@ -518,6 +598,7 @@ class proses extends fb{
 			}
 			$title	= is_int($k)?'Info '.($k+1):'Info Baru';
 			$delBtn	= is_int($k)?'<button type="button" class="btn btn-danger delete"><i class="fa fa-trash" aria-hidden="true"></i> hapus</button>':'';
+			$image	= isset($v[4]) ? $v[4] : '';
 			?>
 			<form method="post" class="form">
 			<div class="box box-info">
@@ -554,6 +635,39 @@ class proses extends fb{
 				</div>
 			</div>
 			</form>
+			<?php if(is_int($k)): ?>
+			<form method="post" class="form-file" enctype="multipart/form-data" data-proses="saveInfoImage" data-max-size="3000000">
+			<div class="box box-default">
+				<div class="box-body">
+					<div class="input">
+						<?php if($image): ?>
+						<div style="margin:0 0 10px 0">
+							<img src="display/info/<?=$image?>" alt="Preview info" class="img-responsive" style="max-height:220px;border:1px solid #ddd;padding:6px;background:#fff">
+						</div>
+						<button type="button" class="btn btn-danger btn-sm info-image-delete" data-index="<?=$k?>"><i class="fa fa-trash"></i> hapus gambar</button>
+						<?php else: ?>
+						<small>Belum ada gambar untuk slide ini.</small>
+						<?php endif; ?>
+					</div>
+					<div class="input-group" style="margin-top:10px">
+					  <span class="input-group-addon">Gambar</span>
+					  <input type="file" name="info_image" class="form-control input-sm" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" data-proses="saveInfoImage">
+					</div>
+					<div class="input" style="margin-top:8px">
+						<input type="hidden" name="index" value="<?=$k?>">
+						<small>
+						- Format yang didukung: <b>jpg, jpeg, png, webp</b><br>
+						- Ukuran maksimal <b>3Mb</b><br>
+						- Upload baru akan mengganti gambar lama
+						</small>
+					</div>
+				</div>
+				<div class="box-footer">
+					<button type="submit" class="btn btn-default pull-right"><i class="fa fa-upload" aria-hidden="true"></i> upload gambar</button>
+				</div>
+			</div>
+			</form>
+			<?php endif; ?>
 			<?php
 		}
 		echo '</div></div></section>';

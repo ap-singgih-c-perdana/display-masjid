@@ -244,42 +244,47 @@ var app = {
 		//upload wallpaper
 		$(document).on('submit','form.form-file',function(event){
 			var verification	= false;
-			var form_data 		= new FormData(this);
-			// form_data.append('id', 'formFileSave');
-			$(this).find(".form-control").each(function(){
-				// console.log(this);
-				// console.log($(this).data('proses'));
-				form_data.append('id', $(this).data('proses'));
-				if($(this).attr('type')=='file'){
-					files 	=  this.files;
-					for (i = 0; i < files.length; i++) {
-						if(i>4){
-							alert('Maksimal 5 file sekali upload...');
-							verification = false;
-							return;
-						}
-						else if(files[i].size > 2000000){
-							alert(files[i].name+' lebih > 2Mb');
-							verification = false;
-							return;
-						}
-						/* cek di server
-						else if (files[i].type!="image/jpeg") {
-							alert(files[i].name+' : ext file bukan jpg');
-							verification = false;
-							return;
-						}
-						*/
-						// console.log(files[i]);
-						form_data.append('file' + i, files[i]);
-						verification = true;
-					}
+			var form_data 		= new FormData();
+			var processId		= $(this).data('proses') || $(this).find('[data-proses]').first().data('proses');
+			var maxSize			= $(this).data('max-size') || 2000000;
+			var maxFiles		= 5;
+			var fileCount		= 0;
+			if(!processId){
+				alert('Proses upload tidak ditemukan...');
+				event.preventDefault();
+				return;
+			}
+			form_data.append('id', processId);
+			$(this).find('[name]').each(function(){
+				if($(this).attr('type')!='file'){
+					form_data.append($(this).attr('name'), $(this).val());
 				}
-			
+			});
+			$(this).find('input[type=file]').each(function(){
+				files = this.files;
+				for (i = 0; i < files.length; i++) {
+					if(fileCount >= maxFiles){
+						alert('Maksimal 5 file sekali upload...');
+						verification = false;
+						return false;
+					}
+					else if(files[i].size > maxSize){
+						alert(files[i].name+' lebih > '+Math.round(maxSize/1000000)+'Mb');
+						verification = false;
+						return false;
+					}
+					form_data.append('file' + fileCount, files[i]);
+					fileCount++;
+					verification = true;
+				}
+				if(verification === false && fileCount >= maxFiles){
+					return false;
+				}
 			});
 			// event.preventDefault();return;
 			if(verification){
 				var $btn	= $(this).find('button.btn-primary');
+				if(!$btn.length)$btn = $(this).find('button[type=submit]').last();
 				var btnText	= $btn.html();
 				$btn.html('<i class="fa fa-spinner fa-pulse"></i> loading...').attr('disabled','disabled');
 				$.ajax({  
@@ -313,6 +318,28 @@ var app = {
 			}
 			
 			event.preventDefault();
+		});
+
+		$(document).on('click','.info-image-delete',function(){
+			if(confirm('Konfirmasi menghapus gambar?')){
+				var index = $(this).data('index');
+				$.ajax({
+					type    : "POST",
+					url     : "proses.php",
+					dataType: "json",
+					data    : {id:'deleteInfoImage',dt:{index:index}}
+				}).done(function(dt){
+					app.cekRegistered(dt.registered);
+					if(dt.success){
+						$('.sidebar-menu .active a').trigger( "click" );
+					}
+					else{
+						alert(dt.data);
+					}
+				}).fail(function(msg){
+					alert(msg.status+"\n"+msg.statusText);
+				});
+			}
 		});
 		
 		//hapus wallpaper
