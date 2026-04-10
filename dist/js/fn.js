@@ -196,20 +196,31 @@ var app = {
 		
 		//form save
 		$(document).on('submit','form.form',function(event){
-			// alert("aaa");
-			var $btn	= $(this).find('button.btn-primary');
+			var $form	= $(this);
+			var $btn	= $form.find('button.btn-primary');
 			var btnText	= $btn.html();
 			var arr		= {};
+			var formData = new FormData();
 			$btn.html('<i class="fa fa-spinner fa-pulse"></i> loading...').attr('disabled','disabled');
-			$.each($(this).serializeArray(), function( k, v ){
+			$.each($form.serializeArray(), function( k, v ){
 				arr[v.name]	= v.value;
+				formData.append('dt['+v.name+']', v.value);
+			});
+			formData.append('id', 'formSave');
+			$form.find('input[type=file]').each(function(){
+				if(this.files && this.files[0]){
+					formData.append(this.name, this.files[0]);
+				}
 			});
 			
 			$.ajax({  
 				type    : "POST",  
 				url     : "proses.php",
 				dataType: "json",
-				data    : {id:'formSave',dt:arr}
+				cache	: false,
+				contentType: false,
+				processData: false,
+				data    : formData
 			}).done(function(dt){
 				app.cekRegistered(dt.registered);
 				console.log(dt);
@@ -320,25 +331,22 @@ var app = {
 			event.preventDefault();
 		});
 
-		$(document).on('click','.info-image-delete',function(){
-			if(confirm('Konfirmasi menghapus gambar?')){
-				var index = $(this).data('index');
-				$.ajax({
-					type    : "POST",
-					url     : "proses.php",
-					dataType: "json",
-					data    : {id:'deleteInfoImage',dt:{index:index}}
-				}).done(function(dt){
-					app.cekRegistered(dt.registered);
-					if(dt.success){
-						$('.sidebar-menu .active a').trigger( "click" );
-					}
-					else{
-						alert(dt.data);
-					}
-				}).fail(function(msg){
-					alert(msg.status+"\n"+msg.statusText);
-				});
+		$(document).on('change', '.info-type-select', function(){
+			var $form = $(this).closest('form');
+			var isImage = $(this).val() === 'image';
+			$form.find('.info-text-fields').toggle(!isImage);
+			$form.find('textarea[name=r2]').prop('required', !isImage);
+			var $uploadBox = $form.find('.info-image-upload-box');
+			if(!$uploadBox.length){
+				$uploadBox = $form.next('form').find('.info-image-upload-box');
+			}
+			if($uploadBox.length){
+				$uploadBox.toggle(isImage);
+			}
+			var $fileInput = $form.find('input[type=file][name=info_image]');
+			if($fileInput.length){
+				var hasActiveImage = $uploadBox.find('img').length > 0;
+				$fileInput.prop('required', isImage && !hasActiveImage);
 			}
 		});
 		

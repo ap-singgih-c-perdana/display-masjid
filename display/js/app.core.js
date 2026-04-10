@@ -223,6 +223,9 @@
 			if(!$hero || !$hero.length){
 				return;
 			}
+			if($hero.hasClass('info-image-only')){
+				return;
+			}
 
 			app.resetQuoteSlideStyles($hero);
 			availableHeight = app.getQuoteAvailableHeight($hero);

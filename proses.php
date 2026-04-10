@@ -344,10 +344,29 @@ class proses extends fb{
 		
 		if($id=='info'){
 			$image = '';
-			if($index !== 'new' && isset($db[$id][$index][4])){
-				$image = $db[$id][$index][4];
+			$type = isset($dt['info_type']) ? $dt['info_type'] : 'text';
+			$textBody = isset($dt['r2']) ? trim($dt['r2']) : '';
+			if($type === 'image'){
+				if(isset($db[$id][$index][4])){
+					$image = $db[$id][$index][4];
+				}
+				if(isset($_FILES['info_image']) && isset($_FILES['info_image']['size']) && $_FILES['info_image']['size'] > 0){
+					$this->deleteInfoFileIfExists($image);
+					$image = $this->saveUploadedInfoFile($_FILES['info_image'], 'info');
+				}
+				if(!$image){
+					$this->retError('Gambar wajib dipilih untuk tipe Gambar...');
+				}
 			}
-			$dt	= [$dt['r1'],$dt['r2'],$dt['r3'],$dt['active'],$image];
+			else{
+				if($textBody === ''){
+					$this->retError('Isi informasi wajib diisi untuk tipe Teks...');
+				}
+				if(isset($db[$id][$index][4]) && $db[$id][$index][4]){
+					$this->deleteInfoFileIfExists($db[$id][$index][4]);
+				}
+			}
+			$dt	= [$dt['r1'],$dt['r2'],$dt['r3'],$dt['active'],$image,$type];
 		}
 		else if($id=='running_text')	$dt	= $dt['text'];
 		else if($id=='youtube'){
@@ -400,48 +419,43 @@ class proses extends fb{
 		return $this->database['info'][$index][4];
 	}
 
-	private function saveInfoImage(){
-		if(empty($_FILES)) $this->retError('File gambar belum dipilih...');
-		if(!isset($_POST['index']) || !is_numeric($_POST['index'])) $this->retError('Index informasi tidak valid...');
+	private function getInfoDir(){
+		return 'display/info/';
+	}
 
-		$index = (int) $_POST['index'];
-		if(!isset($this->database['info'][$index])) $this->retError('Data informasi tidak ditemukan...');
+	private function deleteInfoFileIfExists($filename){
+		if(!$filename) return;
+		$path = $this->getInfoDir().$filename;
+		if(file_exists($path)){
+			@unlink($path);
+		}
+	}
 
-		$dir = 'display/info/';
+	private function saveUploadedInfoFile($file, $filenamePrefix){
+		$dir = $this->getInfoDir();
 		if(!is_dir($dir) || !is_writable($dir)){
 			$this->retError('Folder info tidak bisa ditulis. Cek permission folder: '.$dir);
 		}
 
 		$allowed_ext = array('jpg','jpeg','png','webp');
-		$uploaded = false;
-		foreach($_FILES as $file){
-			if($file['size'] > 0){
-				$uploaded = true;
-				$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-				if(!in_array($ext, $allowed_ext)){
-					$this->retError($file['name']." tidak didukung\nExt yang diperbolehkan : ".implode(", ",$allowed_ext));
-				}
-				if($file['size'] > 3000000){
-					$this->retError($file['name'].' lebih > 3Mb');
-				}
-
-				$oldImage = $this->getInfoImage($index);
-				if($oldImage && file_exists($dir.$oldImage) && !unlink($dir.$oldImage)){
-					$this->retError('Gambar lama tidak bisa dihapus. Cek permission folder info.');
-				}
-
-				$targetName = 'info-'.time().'-'.$index.'.'.$ext;
-				if(!move_uploaded_file($file['tmp_name'], $dir.$targetName)){
-					$this->retError('Gagal upload gambar ke folder tujuan. Cek permission folder: '.$dir);
-				}
-
-				$this->database['info'][$index][4] = $targetName;
-				$this->saveDatabase();
-				$this->retSuccess();
-			}
+		$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+		if(!in_array($ext, $allowed_ext)){
+			$this->retError($file['name']." tidak didukung\nExt yang diperbolehkan : ".implode(", ",$allowed_ext));
+		}
+		if($file['size'] > 3000000){
+			$this->retError($file['name'].' lebih > 3Mb');
 		}
 
-		if(!$uploaded) $this->retError('File gambar belum dipilih...');
+		$targetName = $filenamePrefix.'-'.time().'.'.$ext;
+		if(!move_uploaded_file($file['tmp_name'], $dir.$targetName)){
+			$this->retError('Gagal upload gambar ke folder tujuan. Cek permission folder: '.$dir);
+		}
+		return $targetName;
+	}
+
+	private function getInfoType($item){
+		if(isset($item[5]) && $item[5] == 'image') return 'image';
+		return 'text';
 	}
 
 	private function deleteInfoImage(){
@@ -450,13 +464,9 @@ class proses extends fb{
 		$index = (int) $this->dt['index'];
 		if(!isset($this->database['info'][$index])) $this->retError('Data informasi tidak ditemukan...');
 
-		$dir = 'display/info/';
 		$image = $this->getInfoImage($index);
 		if(!$image) $this->retError('Gambar tidak ditemukan...');
-
-		if(file_exists($dir.$image) && !unlink($dir.$image)){
-			$this->retError('Gagal menghapus file gambar. Cek permission folder: '.$dir);
-		}
+		$this->deleteInfoFileIfExists($image);
 
 		$this->database['info'][$index][4] = '';
 		$this->saveDatabase();
@@ -583,7 +593,8 @@ class proses extends fb{
 		$id	= 'info';
 		ob_start();
 		$arrActive			= ['Ya'	=> 1, 'Tidak' => 0];
-		$db[$id]['new']		= ['','','',true];
+		$arrType			= ['Teks' => 'text', 'Gambar' => 'image'];
+		$db[$id]['new']		= ['','','',true,'','text'];
 		// print_r( $this->getLogo());
 		echo '
 			<section class="content-header content-dynamic">
@@ -599,6 +610,12 @@ class proses extends fb{
 			$title	= is_int($k)?'Info '.($k+1):'Info Baru';
 			$delBtn	= is_int($k)?'<button type="button" class="btn btn-danger delete"><i class="fa fa-trash" aria-hidden="true"></i> hapus</button>':'';
 			$image	= isset($v[4]) ? $v[4] : '';
+			$type	= $this->getInfoType($v);
+			$optType	= '';
+			foreach($arrType as $ka => $va){
+				$selected	= $va==$type?'selected':'';
+				$optType	.= '<option '.$selected.' value="'.$va.'">'.$ka.'</option>';
+			}
 			?>
 			<form method="post" class="form">
 			<div class="box box-info">
@@ -610,15 +627,39 @@ class proses extends fb{
 				</div>
 				<div class="box-body">
 					<div class="input-group">
+					  <span class="input-group-addon">Tipe</span>
+					  <select name="info_type" class="form-control input-sm info-type-select" required><?=$optType?></select>
+					</div>
+					<div class="input-group info-text-fields" style="<?=$type === 'image' ? 'display:none' : ''?>">
 					  <span class="input-group-addon">Header</span>
 					  <input name="r1" type="text" maxlength="100" class="form-control" value="<?=$v[0]?>" placeholder="boleh dikosongkan">
 					</div>
-					<div class="input">
-					  <textarea name="r2" maxlength="255" rows="3" class="form-control" ><?=$v[1]?></textarea>
+					<div class="input info-text-fields" style="<?=$type === 'image' ? 'display:none' : ''?>">
+					  <textarea name="r2" maxlength="255" rows="3" class="form-control" <?=$type === 'text' ? 'required' : ''?>><?=$v[1]?></textarea>
 					</div>
-					<div class="input-group">
+					<div class="input-group info-text-fields" style="<?=$type === 'image' ? 'display:none' : ''?>">
 					  <span class="input-group-addon">Footer</span>
 					  <input name="r3" type="text" maxlength="100" class="form-control" value="<?=$v[2]?>" placeholder="boleh dikosongkan">
+					</div>
+					<?php if(!is_int($k)): ?>
+					<div class="input" style="margin-top:8px">
+						<small>
+						- `Teks` menampilkan judul, isi, dan footer.<br>
+						- `Gambar penuh` menampilkan gambar besar memenuhi area konten seperti YouTube/PPT.
+						</small>
+					</div>
+					<?php endif; ?>
+					<div class="info-image-upload-box" style="<?=$type === 'image' ? '' : 'display:none'?>">
+						<?php if($image): ?>
+						<div class="input" style="margin:10px 0">
+							<div style="margin-bottom:8px"><small>Gambar aktif: <b><?=$image?></b></small></div>
+							<img src="display/info/<?=$image?>" alt="Preview info" class="img-responsive" style="max-height:220px;border:1px solid #ddd;padding:6px;background:#fff">
+						</div>
+						<?php endif; ?>
+						<div class="input-group" style="margin-top:10px">
+						  <span class="input-group-addon">Gambar</span>
+						  <input type="file" name="info_image" class="form-control input-sm" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" <?=($type === 'image' && !$image) ? 'required' : ''?>>
+						</div>
 					</div>
 					<div class="input-group">
 					  <span class="input-group-addon">Aktif</span>
@@ -635,39 +676,6 @@ class proses extends fb{
 				</div>
 			</div>
 			</form>
-			<?php if(is_int($k)): ?>
-			<form method="post" class="form-file" enctype="multipart/form-data" data-proses="saveInfoImage" data-max-size="3000000">
-			<div class="box box-default">
-				<div class="box-body">
-					<div class="input">
-						<?php if($image): ?>
-						<div style="margin:0 0 10px 0">
-							<img src="display/info/<?=$image?>" alt="Preview info" class="img-responsive" style="max-height:220px;border:1px solid #ddd;padding:6px;background:#fff">
-						</div>
-						<button type="button" class="btn btn-danger btn-sm info-image-delete" data-index="<?=$k?>"><i class="fa fa-trash"></i> hapus gambar</button>
-						<?php else: ?>
-						<small>Belum ada gambar untuk slide ini.</small>
-						<?php endif; ?>
-					</div>
-					<div class="input-group" style="margin-top:10px">
-					  <span class="input-group-addon">Gambar</span>
-					  <input type="file" name="info_image" class="form-control input-sm" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" data-proses="saveInfoImage">
-					</div>
-					<div class="input" style="margin-top:8px">
-						<input type="hidden" name="index" value="<?=$k?>">
-						<small>
-						- Format yang didukung: <b>jpg, jpeg, png, webp</b><br>
-						- Ukuran maksimal <b>3Mb</b><br>
-						- Upload baru akan mengganti gambar lama
-						</small>
-					</div>
-				</div>
-				<div class="box-footer">
-					<button type="submit" class="btn btn-default pull-right"><i class="fa fa-upload" aria-hidden="true"></i> upload gambar</button>
-				</div>
-			</div>
-			</form>
-			<?php endif; ?>
 			<?php
 		}
 		echo '</div></div></section>';
