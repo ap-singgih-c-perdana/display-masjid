@@ -56,6 +56,7 @@
 			app.initDebugTime();
 			app.initAudioUnlock();
 			app.initRunningText();
+			app.setupQuoteAutoFit();
 			app.setupYoutube();
 			app.setupPpt();
 			app.primeJadwal();
@@ -185,6 +186,95 @@
 
 		getCountdownPrayKeys: function(){
 			return ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
+		},
+
+		setupQuoteAutoFit: function(){
+			var app = this;
+			var debouncedFit = app.debounce(function(){
+				app.fitQuoteSlides();
+			}, 120);
+			app.fitQuoteSlides();
+			$(window).on('resize', debouncedFit);
+			$('.quote-carousel').on('slid.bs.carousel', function(){
+				app.fitQuoteSlides();
+			});
+			$(window).on('load', function(){
+				app.fitQuoteSlides();
+			});
+		},
+
+		fitQuoteSlides: function(){
+			var app = this;
+			$('.quote-carousel .hero').each(function(){
+				app.fitQuoteSlide($(this));
+			});
+		},
+
+		fitQuoteSlide: function($hero){
+			var app = this;
+			var availableHeight;
+			var scale;
+			var minScale = 0.6;
+			var step = 0.04;
+
+			if(!$hero || !$hero.length){
+				return;
+			}
+
+			app.resetQuoteSlideStyles($hero);
+			availableHeight = app.getQuoteAvailableHeight($hero);
+			if(availableHeight <= 0){
+				return;
+			}
+
+			scale = 1;
+			while($hero.outerHeight() > availableHeight && scale > minScale){
+				scale = Math.max(minScale, scale - step);
+				app.applyQuoteScale($hero, scale);
+			}
+		},
+
+		resetQuoteSlideStyles: function($hero){
+			$hero.css({
+				'--quote-text1-size': '',
+				'--quote-text2-size': '',
+				'--quote-text3-size': '',
+				'--quote-text1-gap': '',
+				'--quote-text3-gap': '',
+				'--quote-text3-line-offset': ''
+			});
+		},
+
+		applyQuoteScale: function($hero, scale){
+			$hero.css({
+				'--quote-text1-size': (4.2 * scale) + 'vw',
+				'--quote-text2-size': (4 * scale) + 'vw',
+				'--quote-text3-size': (2.2 * scale) + 'vw',
+				'--quote-text1-gap': (2.2 * scale) + 'vh',
+				'--quote-text3-gap': (4 * scale) + 'vh',
+				'--quote-text3-line-offset': (-1 * scale) + 'vw'
+			});
+		},
+
+		getQuoteAvailableHeight: function($hero){
+			var runningTextTop = $('#running-text').offset() ? $('#running-text').offset().top : window.innerHeight;
+			var logoTop = $('#logo').offset() ? $('#logo').offset().top : window.innerHeight;
+			var heroTop = $hero.offset() ? $hero.offset().top : 0;
+			var bottomLimit = Math.min(runningTextTop, logoTop) - 20;
+
+			return Math.max(0, bottomLimit - heroTop);
+		},
+
+		debounce: function(fn, wait){
+			var timeoutId = null;
+			return function(){
+				var context = this;
+				var args = arguments;
+				clearTimeout(timeoutId);
+				timeoutId = setTimeout(function(){
+					fn.apply(context, args);
+				}, wait);
+			};
 		}
 	};
 })(window, jQuery);
