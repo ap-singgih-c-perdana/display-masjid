@@ -346,10 +346,10 @@ class proses extends fb{
 			$image = '';
 			$type = isset($dt['info_type']) ? $dt['info_type'] : 'text';
 			$textBody = isset($dt['r2']) ? trim($dt['r2']) : '';
+			if(isset($db[$id][$index][4])){
+				$image = $db[$id][$index][4];
+			}
 			if($type === 'image'){
-				if(isset($db[$id][$index][4])){
-					$image = $db[$id][$index][4];
-				}
 				if(isset($_FILES['info_image']) && isset($_FILES['info_image']['size']) && $_FILES['info_image']['size'] > 0){
 					$this->deleteInfoFileIfExists($image);
 					$image = $this->saveUploadedInfoFile($_FILES['info_image'], 'info');
@@ -361,9 +361,6 @@ class proses extends fb{
 			else{
 				if($textBody === ''){
 					$this->retError('Isi informasi wajib diisi untuk tipe Teks...');
-				}
-				if(isset($db[$id][$index][4]) && $db[$id][$index][4]){
-					$this->deleteInfoFileIfExists($db[$id][$index][4]);
 				}
 			}
 			$dt	= [$dt['r1'],$dt['r2'],$dt['r3'],$dt['active'],$image,$type];

@@ -228,7 +228,7 @@ var app = {
 					if(dt.success){
 						$btn.html('<i class="fa fa-check"></i> tersimpan');
 						setTimeout(function(){
-							if(arr['index']=='new')$('.sidebar-menu .active a').trigger( "click" );
+							if(arr['formId']=='info' || arr['index']=='new')$('.sidebar-menu .active a').trigger( "click" );
 							else {
 								$('input[type=password]').val('');
 								$btn.html(btnText).removeAttr('disabled');
