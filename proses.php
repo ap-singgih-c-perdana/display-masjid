@@ -342,7 +342,29 @@ class proses extends fb{
 		unset($dt['formId']);
 		unset($dt['index']);
 		
-		if($id=='info')	$dt	= [$dt['r1'],$dt['r2'],$dt['r3'],$dt['active']];
+		if($id=='info'){
+			$image = '';
+			$type = isset($dt['info_type']) ? $dt['info_type'] : 'text';
+			$textBody = isset($dt['r2']) ? trim($dt['r2']) : '';
+			if(isset($db[$id][$index][4])){
+				$image = $db[$id][$index][4];
+			}
+			if($type === 'image'){
+				if(isset($_FILES['info_image']) && isset($_FILES['info_image']['size']) && $_FILES['info_image']['size'] > 0){
+					$this->deleteInfoFileIfExists($image);
+					$image = $this->saveUploadedInfoFile($_FILES['info_image'], 'info');
+				}
+				if(!$image){
+					$this->retError('Gambar wajib dipilih untuk tipe Gambar...');
+				}
+			}
+			else{
+				if($textBody === ''){
+					$this->retError('Isi informasi wajib diisi untuk tipe Teks...');
+				}
+			}
+			$dt	= [$dt['r1'],$dt['r2'],$dt['r3'],$dt['active'],$image,$type];
+		}
 		else if($id=='running_text')	$dt	= $dt['text'];
 		else if($id=='youtube'){
 			$dt['active']	= isset($dt['active']) && $dt['active']=='1';
@@ -385,6 +407,65 @@ class proses extends fb{
 		// unset($db['akses']);//proteksi biar user/password gak kebaca 
 		// $this->data = $db;
 		$this->database = array_merge($this->database,$db);
+		$this->saveDatabase();
+		$this->retSuccess();
+	}
+
+	private function getInfoImage($index){
+		if(!isset($this->database['info'][$index][4])) return '';
+		return $this->database['info'][$index][4];
+	}
+
+	private function getInfoDir(){
+		return 'display/info/';
+	}
+
+	private function deleteInfoFileIfExists($filename){
+		if(!$filename) return;
+		$path = $this->getInfoDir().$filename;
+		if(file_exists($path)){
+			@unlink($path);
+		}
+	}
+
+	private function saveUploadedInfoFile($file, $filenamePrefix){
+		$dir = $this->getInfoDir();
+		if(!is_dir($dir) || !is_writable($dir)){
+			$this->retError('Folder info tidak bisa ditulis. Cek permission folder: '.$dir);
+		}
+
+		$allowed_ext = array('jpg','jpeg','png','webp');
+		$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+		if(!in_array($ext, $allowed_ext)){
+			$this->retError($file['name']." tidak didukung\nExt yang diperbolehkan : ".implode(", ",$allowed_ext));
+		}
+		if($file['size'] > 3000000){
+			$this->retError($file['name'].' lebih > 3Mb');
+		}
+
+		$targetName = $filenamePrefix.'-'.time().'.'.$ext;
+		if(!move_uploaded_file($file['tmp_name'], $dir.$targetName)){
+			$this->retError('Gagal upload gambar ke folder tujuan. Cek permission folder: '.$dir);
+		}
+		return $targetName;
+	}
+
+	private function getInfoType($item){
+		if(isset($item[5]) && $item[5] == 'image') return 'image';
+		return 'text';
+	}
+
+	private function deleteInfoImage(){
+		if(!isset($this->dt['index']) || !is_numeric($this->dt['index'])) $this->retError('Index informasi tidak valid...');
+
+		$index = (int) $this->dt['index'];
+		if(!isset($this->database['info'][$index])) $this->retError('Data informasi tidak ditemukan...');
+
+		$image = $this->getInfoImage($index);
+		if(!$image) $this->retError('Gambar tidak ditemukan...');
+		$this->deleteInfoFileIfExists($image);
+
+		$this->database['info'][$index][4] = '';
 		$this->saveDatabase();
 		$this->retSuccess();
 	}
@@ -484,6 +565,12 @@ class proses extends fb{
 			$this->retError("Minimal harus ada 1 data...");
 		}
 		else{
+			if($id == 'info' && isset($db[$id][$index][4]) && $db[$id][$index][4]){
+				$image = 'display/info/'.$db[$id][$index][4];
+				if(file_exists($image)){
+					@unlink($image);
+				}
+			}
 			unset($db[$id][$index]);
 			$db[$id] = array_values($db[$id]);//re-index
 			$this->database = $db;
@@ -503,7 +590,8 @@ class proses extends fb{
 		$id	= 'info';
 		ob_start();
 		$arrActive			= ['Ya'	=> 1, 'Tidak' => 0];
-		$db[$id]['new']		= ['','','',true];
+		$arrType			= ['Teks' => 'text', 'Gambar' => 'image'];
+		$db[$id]['new']		= ['','','',true,'','text'];
 		// print_r( $this->getLogo());
 		echo '
 			<section class="content-header content-dynamic">
@@ -518,6 +606,13 @@ class proses extends fb{
 			}
 			$title	= is_int($k)?'Info '.($k+1):'Info Baru';
 			$delBtn	= is_int($k)?'<button type="button" class="btn btn-danger delete"><i class="fa fa-trash" aria-hidden="true"></i> hapus</button>':'';
+			$image	= isset($v[4]) ? $v[4] : '';
+			$type	= $this->getInfoType($v);
+			$optType	= '';
+			foreach($arrType as $ka => $va){
+				$selected	= $va==$type?'selected':'';
+				$optType	.= '<option '.$selected.' value="'.$va.'">'.$ka.'</option>';
+			}
 			?>
 			<form method="post" class="form">
 			<div class="box box-info">
@@ -529,15 +624,39 @@ class proses extends fb{
 				</div>
 				<div class="box-body">
 					<div class="input-group">
+					  <span class="input-group-addon">Tipe</span>
+					  <select name="info_type" class="form-control input-sm info-type-select" required><?=$optType?></select>
+					</div>
+					<div class="input-group info-text-fields" style="<?=$type === 'image' ? 'display:none' : ''?>">
 					  <span class="input-group-addon">Header</span>
 					  <input name="r1" type="text" maxlength="100" class="form-control" value="<?=$v[0]?>" placeholder="boleh dikosongkan">
 					</div>
-					<div class="input">
-					  <textarea name="r2" maxlength="255" rows="3" class="form-control" ><?=$v[1]?></textarea>
+					<div class="input info-text-fields" style="<?=$type === 'image' ? 'display:none' : ''?>">
+					  <textarea name="r2" maxlength="255" rows="3" class="form-control" <?=$type === 'text' ? 'required' : ''?>><?=$v[1]?></textarea>
 					</div>
-					<div class="input-group">
+					<div class="input-group info-text-fields" style="<?=$type === 'image' ? 'display:none' : ''?>">
 					  <span class="input-group-addon">Footer</span>
 					  <input name="r3" type="text" maxlength="100" class="form-control" value="<?=$v[2]?>" placeholder="boleh dikosongkan">
+					</div>
+					<?php if(!is_int($k)): ?>
+					<div class="input" style="margin-top:8px">
+						<small>
+						- `Teks` menampilkan judul, isi, dan footer.<br>
+						- `Gambar penuh` menampilkan gambar besar memenuhi area konten seperti YouTube/PPT.
+						</small>
+					</div>
+					<?php endif; ?>
+					<div class="info-image-upload-box" style="<?=$type === 'image' ? '' : 'display:none'?>">
+						<?php if($image): ?>
+						<div class="input" style="margin:10px 0">
+							<div style="margin-bottom:8px"><small>Gambar aktif: <b><?=$image?></b></small></div>
+							<img src="display/info/<?=$image?>" alt="Preview info" class="img-responsive" style="max-height:220px;border:1px solid #ddd;padding:6px;background:#fff">
+						</div>
+						<?php endif; ?>
+						<div class="input-group" style="margin-top:10px">
+						  <span class="input-group-addon">Gambar</span>
+						  <input type="file" name="info_image" class="form-control input-sm" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" <?=($type === 'image' && !$image) ? 'required' : ''?>>
+						</div>
 					</div>
 					<div class="input-group">
 					  <span class="input-group-addon">Aktif</span>

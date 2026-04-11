@@ -742,6 +742,46 @@ Image credits: unsplash.com
 	position:relative;
 	font-style: italic;
 }
+.quote-carousel .hero.info-image-only{
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	transform: none;
+	max-width: none;
+	padding: 0;
+}
+.quote-carousel .info-image-slide{
+	position:absolute;
+	top:2vh;
+	right:2vw;
+	left:2vw;
+}
+.quote-carousel .info-image-frame{
+	position:relative;
+	width:100%;
+	height:100%;
+	border:0.25vw solid rgba(51,204,204,0.45);
+	border-radius:1.2vw;
+	box-shadow:0 0 2vw rgba(0,0,0,0.45);
+	overflow:hidden;
+	background:rgba(0,0,0,0.35);
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}
+.quote-carousel .info-image-full{
+	width:100%;
+	height:100%;
+	object-fit:cover;
+	display:block;
+	background:#111;
+}
+.quote-carousel .info-image-empty{
+	font-size:2vw;
+	color:rgba(255,255,255,0.7);
+	font-family:'Titillium Web', Helvetica, Arial, sans-serif;
+}
 .quote-carousel .text3:before{
 	display: block;
 	content: "";

@@ -198,6 +198,9 @@
 			$('.quote-carousel').on('slid.bs.carousel', function(){
 				app.fitQuoteSlides();
 			});
+			$('.quote-carousel .quote-image').on('load', function(){
+				app.fitQuoteSlides();
+			});
 			$(window).on('load', function(){
 				app.fitQuoteSlides();
 			});
@@ -218,6 +221,9 @@
 			var step = 0.04;
 
 			if(!$hero || !$hero.length){
+				return;
+			}
+			if($hero.hasClass('info-image-only')){
 				return;
 			}
 

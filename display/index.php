@@ -15,6 +15,13 @@
 	$db		= json_decode($json, true);
 	$showDb	= $db;
 	unset($showDb['akses']);
+
+	$getInfoImage = function($item){
+		return isset($item[4]) ? trim($item[4]) : '';
+	};
+	$getInfoType = function($item){
+		return isset($item[5]) && $item[5] === 'image' ? 'image' : 'text';
+	};
 	
 	$info_timer			= $db['timer']['info'] 		* 1000;	//detik
 	$wallpaper_timer	= $db['timer']['wallpaper'] * 1000;	
@@ -114,14 +121,19 @@
 				$i=0;
 				foreach($db['info'] as $k => $v){
 					if($v[3]){
+						$image = $getInfoImage($v);
+						$type = $getInfoType($v);
 						echo '
 						<div class="item slides '.($i==0?'active':'').'">
-						  <div class="hero">        
-							<hgroup>
+						  <div class="hero '.($type === 'image' ? 'info-image-only' : '').'">        
+							'.($type === 'image'
+								? '<div class="info-image-slide"><div class="info-image-frame">'.($image?'<img class="info-image-full" src="info/'.htmlentities($image).'" alt="Info image">':'<div class="info-image-empty">Upload gambar untuk slide ini</div>').'</div></div>'
+								: '<hgroup>
 								<div class="text1">'.htmlentities($v[0]).'</div>        
 								<div class="text2">'.nl2br(htmlentities($v[1])).'</div>        
 								<div class="text3">'.htmlentities($v[2]).'</div>
-							</hgroup>
+							</hgroup>'
+							).'
 						  </div>
 						</div>
 						';
