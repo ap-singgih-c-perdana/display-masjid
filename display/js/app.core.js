@@ -194,16 +194,29 @@
 				app.fitQuoteSlides();
 			}, 120);
 			app.fitQuoteSlides();
+			app.syncQuoteDisplayMode();
 			$(window).on('resize', debouncedFit);
 			$('.quote-carousel').on('slid.bs.carousel', function(){
 				app.fitQuoteSlides();
+				app.syncQuoteDisplayMode();
 			});
 			$('.quote-carousel .quote-image').on('load', function(){
 				app.fitQuoteSlides();
 			});
 			$(window).on('load', function(){
 				app.fitQuoteSlides();
+				app.syncQuoteDisplayMode();
 			});
+		},
+
+		syncQuoteDisplayMode: function(){
+			var $activeHero = $('.quote-carousel .item.active .hero');
+			var infoDisplay = this.db.infoDisplay || {};
+			var isImageSlide = $activeHero.length &&
+				$activeHero.hasClass('info-image-only') &&
+				$('#quote').is(':visible') &&
+				this.isEnabled(infoDisplay.fullscreen);
+			$('body').toggleClass('image-slide-fullscreen-mode', !!isImageSlide);
 		},
 
 		fitQuoteSlides: function(){

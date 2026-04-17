@@ -1,5 +1,9 @@
 (function(window, $){
 	$.extend(window.DisplayApp, {
+		setInfoFullscreenMode: function(active){
+			$('body').toggleClass('info-fullscreen-mode', !!active);
+		},
+
 		getYoutubeVideoId: function(url){
 			if(!url) return '';
 			var match = url.match(/(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtu\.be\/)([^&?/]+)/i);
@@ -39,6 +43,9 @@
 			var showYoutube = app.isEnabled(youtube.active) && app.youtubeReady;
 			var ppt = app.db.ppt || {};
 			var showPpt = !showYoutube && app.isEnabled(ppt.active) && app.pptReady;
+			var infoDisplay = app.db.infoDisplay || {};
+			var showQuote = !showYoutube && !showPpt;
+			var showQuoteFullscreen = showQuote && app.isEnabled(infoDisplay.fullscreen);
 			var $youtubePlayer = $('#youtube-player');
 			var $pptPlayer = $('#ppt-player');
 
@@ -62,7 +69,11 @@
 
 			$('#youtube-container').toggle(showYoutube);
 			$('#ppt-container').toggle(showPpt);
-			$('#quote').toggle(!showYoutube && !showPpt);
+			$('#quote').toggle(showQuote);
+			app.setInfoFullscreenMode(showQuoteFullscreen);
+			if(typeof app.syncQuoteDisplayMode === 'function'){
+				app.syncQuoteDisplayMode();
+			}
 		}
 	});
 })(window, jQuery);

@@ -222,6 +222,9 @@ class proses extends fb{
 			'ppt' => [
 				'active'	=> false,
 				'url'		=> ''
+			],
+			'infoDisplay' => [
+				'fullscreen' => false
 			]
 		];
 	}
@@ -242,22 +245,30 @@ class proses extends fb{
 		if(!is_array($this->database)){
 			$this->retError('Database rusak / format JSON tidak valid: '.json_last_error_msg());
 		}
+		$needsSave = false;
 		if(!isset($this->database['youtube']) || !is_array($this->database['youtube'])){
 			$this->database['youtube'] = [
 				'active'	=> false,
 				'url'		=> '',
 				'mute'		=> true
 			];
-			$this->saveDatabase();
+			$needsSave = true;
 		}
 		if(!isset($this->database['ppt']) || !is_array($this->database['ppt'])){
 			$this->database['ppt'] = [
 				'active'	=> false,
 				'url'		=> ''
 			];
-			$this->saveDatabase();
+			$needsSave = true;
 		}
-		$needsSave = false;
+		if(!isset($this->database['infoDisplay']) || !is_array($this->database['infoDisplay'])){
+			$this->database['infoDisplay'] = $this->defaultDatabase()['infoDisplay'];
+			$needsSave = true;
+		}
+		else if(!isset($this->database['infoDisplay']['fullscreen'])){
+			$this->database['infoDisplay']['fullscreen'] = $this->defaultDatabase()['infoDisplay']['fullscreen'];
+			$needsSave = true;
+		}
 		if(!isset($this->database['timer']) || !is_array($this->database['timer'])){
 			$this->database['timer'] = $this->defaultDatabase()['timer'];
 			$needsSave = true;
@@ -451,6 +462,11 @@ class proses extends fb{
 					'imam' => trim(isset($dt['isha_imam']) ? $dt['isha_imam'] : ''),
 					'muadzin' => trim(isset($dt['isha_muadzin']) ? $dt['isha_muadzin'] : '')
 				]
+			];
+		}
+		else if($id=='infoDisplay'){
+			$dt = [
+				'fullscreen' => isset($dt['fullscreen']) && $dt['fullscreen'] == '1'
 			];
 		}
 		else if($id=='prayTimesAdjust'){
@@ -669,6 +685,20 @@ class proses extends fb{
 			<div class="row">
 			<div class="col-md-12 col-sm-12 col-xs-12">
 		';
+		$formInfoDisplay = [
+			'fullpage seperti youtube' => [
+				'name'	=> 'fullscreen',
+				'type'	=> 'select',
+				'arr'	=> $arrActive,
+				'value'	=> isset($db['infoDisplay']['fullscreen']) ? $db['infoDisplay']['fullscreen'] : false
+			]
+		];
+		$setInfoDisplay = [
+			'id'	=> 'infoDisplay',
+			'title'	=> 'Mode tampilan informasi',
+			'info'	=> "- Saat aktif, slide informasi tampil fullpage.\n- Panel kiri, logo, dan running text disembunyikan seperti mode YouTube/PPT."
+		];
+		echo $this->generateCompleteForm($formInfoDisplay, $setInfoDisplay);
 		foreach($db[$id] as $k => $v){
 			$optActive	= '';
 			foreach($arrActive as $ka => $va){
