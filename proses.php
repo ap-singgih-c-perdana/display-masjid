@@ -686,7 +686,7 @@ class proses extends fb{
 			<div class="col-md-12 col-sm-12 col-xs-12">
 		';
 		$formInfoDisplay = [
-			'fullpage seperti youtube' => [
+			'Mode fullpage' => [
 				'name'	=> 'fullscreen',
 				'type'	=> 'select',
 				'arr'	=> $arrActive,
