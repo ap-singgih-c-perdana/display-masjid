@@ -196,6 +196,9 @@
 			app.fitQuoteSlides();
 			app.syncQuoteDisplayMode();
 			$(window).on('resize', debouncedFit);
+			$('.quote-carousel').on('slide.bs.carousel', function(event){
+				app.syncQuoteDisplayMode($(event.relatedTarget));
+			});
 			$('.quote-carousel').on('slid.bs.carousel', function(){
 				app.fitQuoteSlides();
 				app.syncQuoteDisplayMode();
@@ -209,13 +212,17 @@
 			});
 		},
 
-		syncQuoteDisplayMode: function(){
-			var $activeHero = $('.quote-carousel .item.active .hero');
+		isFullscreenImageSlide: function($item){
 			var infoDisplay = this.db.infoDisplay || {};
-			var isImageSlide = $activeHero.length &&
-				$activeHero.hasClass('info-image-only') &&
+			var $hero = $item && $item.length ? $item.find('.hero').first() : $('.quote-carousel .item.active .hero').first();
+			return $hero.length &&
+				$hero.hasClass('info-image-only') &&
 				$('#quote').is(':visible') &&
 				this.isEnabled(infoDisplay.fullscreen);
+		},
+
+		syncQuoteDisplayMode: function($item){
+			var isImageSlide = this.isFullscreenImageSlide($item);
 			$('body').toggleClass('image-slide-fullscreen-mode', !!isImageSlide);
 		},
 
