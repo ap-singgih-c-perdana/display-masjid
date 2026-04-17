@@ -167,6 +167,29 @@ class proses extends fb{
 				'active'	=> true, // buat sholat tarawih, bisa dipilih aktif atau nggak
 				'duration'	=> 180 //180 menit = 3 jam --> muncul display sholat --> urutan : adzan-iqomah-sholat(isya')-tarawih
 			],
+			'imamMuadzin' => [
+				'active' => false,
+				'fajr' => [
+					'imam' => '',
+					'muadzin' => ''
+				],
+				'dhuhr' => [
+					'imam' => '',
+					'muadzin' => ''
+				],
+				'asr' => [
+					'imam' => '',
+					'muadzin' => ''
+				],
+				'maghrib' => [
+					'imam' => '',
+					'muadzin' => ''
+				],
+				'isha' => [
+					'imam' => '',
+					'muadzin' => ''
+				]
+			],
 			'info'	=> [
 				[
 					'Aplikasi Display-Masjid',
@@ -260,6 +283,33 @@ class proses extends fb{
 		if(!isset($this->database['prayTimesTune']) || !is_array($this->database['prayTimesTune'])){
 			$this->database['prayTimesTune'] = $this->defaultDatabase()['prayTimesTune'];
 			$needsSave = true;
+		}
+		if(!isset($this->database['imamMuadzin']) || !is_array($this->database['imamMuadzin'])){
+			$this->database['imamMuadzin'] = $this->defaultDatabase()['imamMuadzin'];
+			$needsSave = true;
+		}
+		else{
+			$defaultImamMuadzin = $this->defaultDatabase()['imamMuadzin'];
+			if(!isset($this->database['imamMuadzin']['active'])){
+				$this->database['imamMuadzin']['active'] = $defaultImamMuadzin['active'];
+				$needsSave = true;
+			}
+			foreach($defaultImamMuadzin as $key => $value){
+				if($key === 'active'){
+					continue;
+				}
+				if(!isset($this->database['imamMuadzin'][$key]) || !is_array($this->database['imamMuadzin'][$key])){
+					$this->database['imamMuadzin'][$key] = $value;
+					$needsSave = true;
+					continue;
+				}
+				foreach($value as $roleKey => $roleValue){
+					if(!isset($this->database['imamMuadzin'][$key][$roleKey])){
+						$this->database['imamMuadzin'][$key][$roleKey] = $roleValue;
+						$needsSave = true;
+					}
+				}
+			}
 		}
 		if(!isset($this->database['prayName']['sunrise'])){
 			$prayName = [];
@@ -377,6 +427,31 @@ class proses extends fb{
 			$dt['active']	= isset($dt['active']) && $dt['active']=='1';
 			$dt['url']		= trim($dt['url']);
 			if($dt['active'] && !$dt['url']) $this->retError('URL embed PPT wajib diisi jika mode PPT diaktifkan...');
+		}
+		else if($id=='imamMuadzin'){
+			$dt = [
+				'active' => isset($dt['active']) && $dt['active'] == '1',
+				'fajr' => [
+					'imam' => trim(isset($dt['fajr_imam']) ? $dt['fajr_imam'] : ''),
+					'muadzin' => trim(isset($dt['fajr_muadzin']) ? $dt['fajr_muadzin'] : '')
+				],
+				'dhuhr' => [
+					'imam' => trim(isset($dt['dhuhr_imam']) ? $dt['dhuhr_imam'] : ''),
+					'muadzin' => trim(isset($dt['dhuhr_muadzin']) ? $dt['dhuhr_muadzin'] : '')
+				],
+				'asr' => [
+					'imam' => trim(isset($dt['asr_imam']) ? $dt['asr_imam'] : ''),
+					'muadzin' => trim(isset($dt['asr_muadzin']) ? $dt['asr_muadzin'] : '')
+				],
+				'maghrib' => [
+					'imam' => trim(isset($dt['maghrib_imam']) ? $dt['maghrib_imam'] : ''),
+					'muadzin' => trim(isset($dt['maghrib_muadzin']) ? $dt['maghrib_muadzin'] : '')
+				],
+				'isha' => [
+					'imam' => trim(isset($dt['isha_imam']) ? $dt['isha_imam'] : ''),
+					'muadzin' => trim(isset($dt['isha_muadzin']) ? $dt['isha_muadzin'] : '')
+				]
+			];
 		}
 		else if($id=='prayTimesAdjust'){
 			$db['prayTimesMethod']	= $dt['prayTimesMethod'];
@@ -976,7 +1051,7 @@ class proses extends fb{
 			'info'	=> 'Jika diperlukan, aktifkan hanya di bulan ramadhan'
 		];
 		echo $this->generateCompleteForm($formTarawih,$setTarawih);
-		
+
 		echo '</div></div></section>';
 		$this->data .= ob_get_clean();
 		$this->retSuccess();
@@ -1382,6 +1457,93 @@ isha		= 18°
 			'
 		];
 		echo $this->generateCompleteForm($tune_,$set);
+
+		$arrActive = ['Ya' => 1, 'Tidak' => 0];
+		$imamMuadzin = $db['imamMuadzin'];
+		$formImamMuadzin = [
+			'tampilkan di wallpaper' => [
+				'name'	=> 'active',
+				'type'	=> 'select',
+				'arr'	=> $arrActive,
+				'value'	=> $imamMuadzin['active']
+			],
+			'Subuh - imam' => [
+				'name'		=> 'fajr_imam',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['fajr']['imam'],
+				'required'	=> false
+			],
+			'Subuh - muadzin' => [
+				'name'		=> 'fajr_muadzin',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['fajr']['muadzin'],
+				'required'	=> false
+			],
+			'Dzuhur - imam' => [
+				'name'		=> 'dhuhr_imam',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['dhuhr']['imam'],
+				'required'	=> false
+			],
+			'Dzuhur - muadzin' => [
+				'name'		=> 'dhuhr_muadzin',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['dhuhr']['muadzin'],
+				'required'	=> false
+			],
+			'Ashar - imam' => [
+				'name'		=> 'asr_imam',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['asr']['imam'],
+				'required'	=> false
+			],
+			'Ashar - muadzin' => [
+				'name'		=> 'asr_muadzin',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['asr']['muadzin'],
+				'required'	=> false
+			],
+			'Maghrib - imam' => [
+				'name'		=> 'maghrib_imam',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['maghrib']['imam'],
+				'required'	=> false
+			],
+			'Maghrib - muadzin' => [
+				'name'		=> 'maghrib_muadzin',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['maghrib']['muadzin'],
+				'required'	=> false
+			],
+			'Isya - imam' => [
+				'name'		=> 'isha_imam',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['isha']['imam'],
+				'required'	=> false
+			],
+			'Isya - muadzin' => [
+				'name'		=> 'isha_muadzin',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['isha']['muadzin'],
+				'required'	=> false
+			]
+		];
+		$setImamMuadzin = [
+			'id'	=> 'imamMuadzin',
+			'title'	=> 'Jadwal imam & muadzin',
+			'info'	=> 'Saat aktif, data ini siap dipakai untuk slide wallpaper/informasi. Kosongkan field yang belum ingin ditampilkan.'
+		];
+		echo $this->generateCompleteForm($formImamMuadzin, $setImamMuadzin);
 		
 		
 		echo '</div></div></section>';
