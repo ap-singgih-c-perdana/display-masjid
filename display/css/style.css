@@ -559,14 +559,14 @@ Image credits: unsplash.com
 }
 #running-text{
 	height:6.5vw;
-	width:70vw;
+	width:73.6vw;
 	color:#fff;
 	/* margin:3vh 3vw 4vh 3vw; */
 	background-color:rgba(51,204,204,0.32);
 	position:fixed;
 	bottom:2vh;
 	/* bottom:4vh; */
-	right:1vw;
+	right:0.2vw;
 	border-radius:5px;
 	
 	/* right:30vw; */
