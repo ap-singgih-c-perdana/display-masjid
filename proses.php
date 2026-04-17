@@ -696,7 +696,7 @@ class proses extends fb{
 		$setInfoDisplay = [
 			'id'	=> 'infoDisplay',
 			'title'	=> 'Mode tampilan informasi',
-			'info'	=> "- Saat aktif, slide informasi tampil fullpage.\n- Panel kiri, logo, dan running text disembunyikan seperti mode YouTube/PPT."
+			'info'	=> "- Saat aktif, slide informasi tampil fullpage.\n- Panel kiri, logo, dan running text disembunyikan."
 		];
 		echo $this->generateCompleteForm($formInfoDisplay, $setInfoDisplay);
 		foreach($db[$id] as $k => $v){
