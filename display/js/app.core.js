@@ -194,16 +194,36 @@
 				app.fitQuoteSlides();
 			}, 120);
 			app.fitQuoteSlides();
+			app.syncQuoteDisplayMode();
 			$(window).on('resize', debouncedFit);
+			$('.quote-carousel').on('slide.bs.carousel', function(event){
+				app.syncQuoteDisplayMode($(event.relatedTarget));
+			});
 			$('.quote-carousel').on('slid.bs.carousel', function(){
 				app.fitQuoteSlides();
+				app.syncQuoteDisplayMode();
 			});
 			$('.quote-carousel .quote-image').on('load', function(){
 				app.fitQuoteSlides();
 			});
 			$(window).on('load', function(){
 				app.fitQuoteSlides();
+				app.syncQuoteDisplayMode();
 			});
+		},
+
+		isFullscreenImageSlide: function($item){
+			var infoDisplay = this.db.infoDisplay || {};
+			var $hero = $item && $item.length ? $item.find('.hero').first() : $('.quote-carousel .item.active .hero').first();
+			return $hero.length &&
+				$hero.hasClass('info-image-only') &&
+				$('#quote').is(':visible') &&
+				this.isEnabled(infoDisplay.fullscreen);
+		},
+
+		syncQuoteDisplayMode: function($item){
+			var isImageSlide = this.isFullscreenImageSlide($item);
+			$('body').toggleClass('image-slide-fullscreen-mode', !!isImageSlide);
 		},
 
 		fitQuoteSlides: function(){
