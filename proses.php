@@ -514,10 +514,6 @@ class proses extends fb{
 		if(!in_array($ext, $allowed_ext)){
 			$this->retError($file['name']." tidak didukung\nExt yang diperbolehkan : ".implode(", ",$allowed_ext));
 		}
-		if($file['size'] > 3000000){
-			$this->retError($file['name'].' lebih > 3Mb');
-		}
-
 		$targetName = $filenamePrefix.'-'.time().'.'.$ext;
 		if(!move_uploaded_file($file['tmp_name'], $dir.$targetName)){
 			$this->retError('Gagal upload gambar ke folder tujuan. Cek permission folder: '.$dir);
@@ -783,9 +779,8 @@ class proses extends fb{
 					<div class="input">
 						<small>
 						- Ext file yang didukung :  <b>.jpg</b><br>
-						- Ukuran maksimal <b>2Mb</b><br>
 						- Maksimal 5 file dalam sekali upload<br>
-						- Tips : Jika ukuran gambar > 2Mb, cara cepat kompres gambar ⇒ kirim ke whatsapp :P
+						- Gunakan gambar yang proporsional agar loading wallpaper tetap nyaman
 						</small>
 					</div>
 				</div>
@@ -1581,7 +1576,6 @@ isha		= 18°
 				<div class="input">
 					<small>
 					- Ext file yang didukung :  <b>.png</b><br>
-					- Ukuran maksimal <b>2Mb</b><br>
 					- Tips : jika logo tampil terlalu besar pada display, edit gambar pada image editor (contoh : photoshop) dan beri jarak kosong pada atas-bawah atau kiri-kanan gambar
 					</small>
 				</div>

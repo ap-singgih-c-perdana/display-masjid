@@ -257,7 +257,6 @@ var app = {
 			var verification	= false;
 			var form_data 		= new FormData();
 			var processId		= $(this).data('proses') || $(this).find('[data-proses]').first().data('proses');
-			var maxSize			= $(this).data('max-size') || 2000000;
 			var maxFiles		= 5;
 			var fileCount		= 0;
 			if(!processId){
@@ -276,11 +275,6 @@ var app = {
 				for (i = 0; i < files.length; i++) {
 					if(fileCount >= maxFiles){
 						alert('Maksimal 5 file sekali upload...');
-						verification = false;
-						return false;
-					}
-					else if(files[i].size > maxSize){
-						alert(files[i].name+' lebih > '+Math.round(maxSize/1000000)+'Mb');
 						verification = false;
 						return false;
 					}
