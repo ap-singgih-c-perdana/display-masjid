@@ -71,6 +71,7 @@
 
 				$('#right-counter').slideDown();
 				$('#quote, #youtube-container, #ppt-container').hide();
+				app.setInfoFullscreenMode(false);
 
 				app.nextPrayCountdownTicks++;
 				if(app.nextPrayCountdownTicks >= 30){
@@ -166,6 +167,7 @@
 
 				$('#right-counter').slideDown();
 				$('#quote, #youtube-container, #ppt-container').hide();
+				app.setInfoFullscreenMode(false);
 				app.playCountdownBeeps(t.distance);
 
 				if(t.distance < 1){

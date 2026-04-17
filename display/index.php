@@ -15,6 +15,52 @@
 	$db		= json_decode($json, true);
 	$showDb	= $db;
 	unset($showDb['akses']);
+
+	$getInfoImage = function($item){
+		return isset($item[4]) ? trim($item[4]) : '';
+	};
+	$getInfoType = function($item){
+		return isset($item[5]) && $item[5] === 'image' ? 'image' : 'text';
+	};
+	$hasImamMuadzinData = function($data){
+		if(!is_array($data)){
+			return false;
+		}
+		foreach(['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as $key){
+			if(
+				(isset($data[$key]['imam']) && trim($data[$key]['imam']) !== '') ||
+				(isset($data[$key]['muadzin']) && trim($data[$key]['muadzin']) !== '')
+			){
+				return true;
+			}
+		}
+		return false;
+	};
+	$renderImamMuadzinSlide = function($data, $prayNames){
+		$rows = '';
+		foreach(['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as $key){
+			$imam = isset($data[$key]['imam']) ? trim($data[$key]['imam']) : '';
+			$muadzin = isset($data[$key]['muadzin']) ? trim($data[$key]['muadzin']) : '';
+			$rows .= '
+				<div class="imam-row">
+					<div class="imam-time">'.htmlentities(isset($prayNames[$key]) ? $prayNames[$key] : ucfirst($key)).'</div>
+					<div class="imam-name">'.($imam !== '' ? htmlentities($imam) : '<span class="muted">-</span>').'</div>
+					<div class="muadzin-name">'.($muadzin !== '' ? htmlentities($muadzin) : '<span class="muted">-</span>').'</div>
+				</div>
+			';
+		}
+		return '
+			<div class="info-card imam-muadzin-card">
+				<div class="text1">Jadwal Imam &amp; Muadzin</div>
+				<div class="imam-header">
+					<div>Waktu</div>
+					<div>Imam</div>
+					<div>Muadzin</div>
+				</div>
+				<div class="imam-table">'.$rows.'</div>
+			</div>
+		';
+	};
 	
 	$info_timer			= $db['timer']['info'] 		* 1000;	//detik
 	$wallpaper_timer	= $db['timer']['wallpaper'] * 1000;	
@@ -114,19 +160,38 @@
 				$i=0;
 				foreach($db['info'] as $k => $v){
 					if($v[3]){
+						$image = $getInfoImage($v);
+						$type = $getInfoType($v);
 						echo '
 						<div class="item slides '.($i==0?'active':'').'">
-						  <div class="hero">        
-							<hgroup>
+						  <div class="hero '.($type === 'image' ? 'info-image-only' : '').'">        
+							'.($type === 'image'
+								? '<div class="info-image-slide"><div class="info-image-frame">'.($image?'<img class="info-image-full" src="info/'.htmlentities($image).'" alt="Info image">':'<div class="info-image-empty">Upload gambar untuk slide ini</div>').'</div></div>'
+								: '<hgroup>
 								<div class="text1">'.htmlentities($v[0]).'</div>        
 								<div class="text2">'.nl2br(htmlentities($v[1])).'</div>        
 								<div class="text3">'.htmlentities($v[2]).'</div>
-							</hgroup>
+							</hgroup>'
+							).'
 						  </div>
 						</div>
 						';
 						$i++;
 					}
+				}
+				if(
+					isset($db['imamMuadzin']) &&
+					!empty($db['imamMuadzin']['active']) &&
+					$hasImamMuadzinData($db['imamMuadzin'])
+				){
+					echo '
+					<div class="item slides '.($i==0?'active':'').'">
+					  <div class="hero imam-muadzin-hero">
+						'.$renderImamMuadzinSlide($db['imamMuadzin'], isset($db['prayName']) ? $db['prayName'] : []).'
+					  </div>
+					</div>
+					';
+					$i++;
 				}
 				?>
 			  </div> 

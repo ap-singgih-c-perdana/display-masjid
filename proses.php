@@ -167,6 +167,29 @@ class proses extends fb{
 				'active'	=> true, // buat sholat tarawih, bisa dipilih aktif atau nggak
 				'duration'	=> 180 //180 menit = 3 jam --> muncul display sholat --> urutan : adzan-iqomah-sholat(isya')-tarawih
 			],
+			'imamMuadzin' => [
+				'active' => false,
+				'fajr' => [
+					'imam' => '',
+					'muadzin' => ''
+				],
+				'dhuhr' => [
+					'imam' => '',
+					'muadzin' => ''
+				],
+				'asr' => [
+					'imam' => '',
+					'muadzin' => ''
+				],
+				'maghrib' => [
+					'imam' => '',
+					'muadzin' => ''
+				],
+				'isha' => [
+					'imam' => '',
+					'muadzin' => ''
+				]
+			],
 			'info'	=> [
 				[
 					'Aplikasi Display-Masjid',
@@ -199,6 +222,9 @@ class proses extends fb{
 			'ppt' => [
 				'active'	=> false,
 				'url'		=> ''
+			],
+			'infoDisplay' => [
+				'fullscreen' => false
 			]
 		];
 	}
@@ -219,22 +245,30 @@ class proses extends fb{
 		if(!is_array($this->database)){
 			$this->retError('Database rusak / format JSON tidak valid: '.json_last_error_msg());
 		}
+		$needsSave = false;
 		if(!isset($this->database['youtube']) || !is_array($this->database['youtube'])){
 			$this->database['youtube'] = [
 				'active'	=> false,
 				'url'		=> '',
 				'mute'		=> true
 			];
-			$this->saveDatabase();
+			$needsSave = true;
 		}
 		if(!isset($this->database['ppt']) || !is_array($this->database['ppt'])){
 			$this->database['ppt'] = [
 				'active'	=> false,
 				'url'		=> ''
 			];
-			$this->saveDatabase();
+			$needsSave = true;
 		}
-		$needsSave = false;
+		if(!isset($this->database['infoDisplay']) || !is_array($this->database['infoDisplay'])){
+			$this->database['infoDisplay'] = $this->defaultDatabase()['infoDisplay'];
+			$needsSave = true;
+		}
+		else if(!isset($this->database['infoDisplay']['fullscreen'])){
+			$this->database['infoDisplay']['fullscreen'] = $this->defaultDatabase()['infoDisplay']['fullscreen'];
+			$needsSave = true;
+		}
 		if(!isset($this->database['timer']) || !is_array($this->database['timer'])){
 			$this->database['timer'] = $this->defaultDatabase()['timer'];
 			$needsSave = true;
@@ -260,6 +294,33 @@ class proses extends fb{
 		if(!isset($this->database['prayTimesTune']) || !is_array($this->database['prayTimesTune'])){
 			$this->database['prayTimesTune'] = $this->defaultDatabase()['prayTimesTune'];
 			$needsSave = true;
+		}
+		if(!isset($this->database['imamMuadzin']) || !is_array($this->database['imamMuadzin'])){
+			$this->database['imamMuadzin'] = $this->defaultDatabase()['imamMuadzin'];
+			$needsSave = true;
+		}
+		else{
+			$defaultImamMuadzin = $this->defaultDatabase()['imamMuadzin'];
+			if(!isset($this->database['imamMuadzin']['active'])){
+				$this->database['imamMuadzin']['active'] = $defaultImamMuadzin['active'];
+				$needsSave = true;
+			}
+			foreach($defaultImamMuadzin as $key => $value){
+				if($key === 'active'){
+					continue;
+				}
+				if(!isset($this->database['imamMuadzin'][$key]) || !is_array($this->database['imamMuadzin'][$key])){
+					$this->database['imamMuadzin'][$key] = $value;
+					$needsSave = true;
+					continue;
+				}
+				foreach($value as $roleKey => $roleValue){
+					if(!isset($this->database['imamMuadzin'][$key][$roleKey])){
+						$this->database['imamMuadzin'][$key][$roleKey] = $roleValue;
+						$needsSave = true;
+					}
+				}
+			}
 		}
 		if(!isset($this->database['prayName']['sunrise'])){
 			$prayName = [];
@@ -342,7 +403,29 @@ class proses extends fb{
 		unset($dt['formId']);
 		unset($dt['index']);
 		
-		if($id=='info')	$dt	= [$dt['r1'],$dt['r2'],$dt['r3'],$dt['active']];
+		if($id=='info'){
+			$image = '';
+			$type = isset($dt['info_type']) ? $dt['info_type'] : 'text';
+			$textBody = isset($dt['r2']) ? trim($dt['r2']) : '';
+			if(isset($db[$id][$index][4])){
+				$image = $db[$id][$index][4];
+			}
+			if($type === 'image'){
+				if(isset($_FILES['info_image']) && isset($_FILES['info_image']['size']) && $_FILES['info_image']['size'] > 0){
+					$this->deleteInfoFileIfExists($image);
+					$image = $this->saveUploadedInfoFile($_FILES['info_image'], 'info');
+				}
+				if(!$image){
+					$this->retError('Gambar wajib dipilih untuk tipe Gambar...');
+				}
+			}
+			else{
+				if($textBody === ''){
+					$this->retError('Isi informasi wajib diisi untuk tipe Teks...');
+				}
+			}
+			$dt	= [$dt['r1'],$dt['r2'],$dt['r3'],$dt['active'],$image,$type];
+		}
 		else if($id=='running_text')	$dt	= $dt['text'];
 		else if($id=='youtube'){
 			$dt['active']	= isset($dt['active']) && $dt['active']=='1';
@@ -355,6 +438,36 @@ class proses extends fb{
 			$dt['active']	= isset($dt['active']) && $dt['active']=='1';
 			$dt['url']		= trim($dt['url']);
 			if($dt['active'] && !$dt['url']) $this->retError('URL embed PPT wajib diisi jika mode PPT diaktifkan...');
+		}
+		else if($id=='imamMuadzin'){
+			$dt = [
+				'active' => isset($dt['active']) && $dt['active'] == '1',
+				'fajr' => [
+					'imam' => trim(isset($dt['fajr_imam']) ? $dt['fajr_imam'] : ''),
+					'muadzin' => trim(isset($dt['fajr_muadzin']) ? $dt['fajr_muadzin'] : '')
+				],
+				'dhuhr' => [
+					'imam' => trim(isset($dt['dhuhr_imam']) ? $dt['dhuhr_imam'] : ''),
+					'muadzin' => trim(isset($dt['dhuhr_muadzin']) ? $dt['dhuhr_muadzin'] : '')
+				],
+				'asr' => [
+					'imam' => trim(isset($dt['asr_imam']) ? $dt['asr_imam'] : ''),
+					'muadzin' => trim(isset($dt['asr_muadzin']) ? $dt['asr_muadzin'] : '')
+				],
+				'maghrib' => [
+					'imam' => trim(isset($dt['maghrib_imam']) ? $dt['maghrib_imam'] : ''),
+					'muadzin' => trim(isset($dt['maghrib_muadzin']) ? $dt['maghrib_muadzin'] : '')
+				],
+				'isha' => [
+					'imam' => trim(isset($dt['isha_imam']) ? $dt['isha_imam'] : ''),
+					'muadzin' => trim(isset($dt['isha_muadzin']) ? $dt['isha_muadzin'] : '')
+				]
+			];
+		}
+		else if($id=='infoDisplay'){
+			$dt = [
+				'fullscreen' => isset($dt['fullscreen']) && $dt['fullscreen'] == '1'
+			];
 		}
 		else if($id=='prayTimesAdjust'){
 			$db['prayTimesMethod']	= $dt['prayTimesMethod'];
@@ -385,6 +498,61 @@ class proses extends fb{
 		// unset($db['akses']);//proteksi biar user/password gak kebaca 
 		// $this->data = $db;
 		$this->database = array_merge($this->database,$db);
+		$this->saveDatabase();
+		$this->retSuccess();
+	}
+
+	private function getInfoImage($index){
+		if(!isset($this->database['info'][$index][4])) return '';
+		return $this->database['info'][$index][4];
+	}
+
+	private function getInfoDir(){
+		return 'display/info/';
+	}
+
+	private function deleteInfoFileIfExists($filename){
+		if(!$filename) return;
+		$path = $this->getInfoDir().$filename;
+		if(file_exists($path)){
+			@unlink($path);
+		}
+	}
+
+	private function saveUploadedInfoFile($file, $filenamePrefix){
+		$dir = $this->getInfoDir();
+		if(!is_dir($dir) || !is_writable($dir)){
+			$this->retError('Folder info tidak bisa ditulis. Cek permission folder: '.$dir);
+		}
+
+		$allowed_ext = array('jpg','jpeg','png','webp');
+		$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+		if(!in_array($ext, $allowed_ext)){
+			$this->retError($file['name']." tidak didukung\nExt yang diperbolehkan : ".implode(", ",$allowed_ext));
+		}
+		$targetName = $filenamePrefix.'-'.time().'.'.$ext;
+		if(!move_uploaded_file($file['tmp_name'], $dir.$targetName)){
+			$this->retError('Gagal upload gambar ke folder tujuan. Cek permission folder: '.$dir);
+		}
+		return $targetName;
+	}
+
+	private function getInfoType($item){
+		if(isset($item[5]) && $item[5] == 'image') return 'image';
+		return 'text';
+	}
+
+	private function deleteInfoImage(){
+		if(!isset($this->dt['index']) || !is_numeric($this->dt['index'])) $this->retError('Index informasi tidak valid...');
+
+		$index = (int) $this->dt['index'];
+		if(!isset($this->database['info'][$index])) $this->retError('Data informasi tidak ditemukan...');
+
+		$image = $this->getInfoImage($index);
+		if(!$image) $this->retError('Gambar tidak ditemukan...');
+		$this->deleteInfoFileIfExists($image);
+
+		$this->database['info'][$index][4] = '';
 		$this->saveDatabase();
 		$this->retSuccess();
 	}
@@ -484,6 +652,12 @@ class proses extends fb{
 			$this->retError("Minimal harus ada 1 data...");
 		}
 		else{
+			if($id == 'info' && isset($db[$id][$index][4]) && $db[$id][$index][4]){
+				$image = 'display/info/'.$db[$id][$index][4];
+				if(file_exists($image)){
+					@unlink($image);
+				}
+			}
 			unset($db[$id][$index]);
 			$db[$id] = array_values($db[$id]);//re-index
 			$this->database = $db;
@@ -503,13 +677,28 @@ class proses extends fb{
 		$id	= 'info';
 		ob_start();
 		$arrActive			= ['Ya'	=> 1, 'Tidak' => 0];
-		$db[$id]['new']		= ['','','',true];
+		$arrType			= ['Teks' => 'text', 'Gambar' => 'image'];
+		$db[$id]['new']		= ['','','',true,'','text'];
 		// print_r( $this->getLogo());
 		echo '
 			<section class="content-header content-dynamic">
 			<div class="row">
 			<div class="col-md-12 col-sm-12 col-xs-12">
 		';
+		$formInfoDisplay = [
+			'fullpage seperti youtube' => [
+				'name'	=> 'fullscreen',
+				'type'	=> 'select',
+				'arr'	=> $arrActive,
+				'value'	=> isset($db['infoDisplay']['fullscreen']) ? $db['infoDisplay']['fullscreen'] : false
+			]
+		];
+		$setInfoDisplay = [
+			'id'	=> 'infoDisplay',
+			'title'	=> 'Mode tampilan informasi',
+			'info'	=> "- Saat aktif, slide informasi tampil fullpage.\n- Panel kiri, logo, dan running text disembunyikan seperti mode YouTube/PPT."
+		];
+		echo $this->generateCompleteForm($formInfoDisplay, $setInfoDisplay);
 		foreach($db[$id] as $k => $v){
 			$optActive	= '';
 			foreach($arrActive as $ka => $va){
@@ -518,6 +707,13 @@ class proses extends fb{
 			}
 			$title	= is_int($k)?'Info '.($k+1):'Info Baru';
 			$delBtn	= is_int($k)?'<button type="button" class="btn btn-danger delete"><i class="fa fa-trash" aria-hidden="true"></i> hapus</button>':'';
+			$image	= isset($v[4]) ? $v[4] : '';
+			$type	= $this->getInfoType($v);
+			$optType	= '';
+			foreach($arrType as $ka => $va){
+				$selected	= $va==$type?'selected':'';
+				$optType	.= '<option '.$selected.' value="'.$va.'">'.$ka.'</option>';
+			}
 			?>
 			<form method="post" class="form">
 			<div class="box box-info">
@@ -529,15 +725,39 @@ class proses extends fb{
 				</div>
 				<div class="box-body">
 					<div class="input-group">
+					  <span class="input-group-addon">Tipe</span>
+					  <select name="info_type" class="form-control input-sm info-type-select" required><?=$optType?></select>
+					</div>
+					<div class="input-group info-text-fields" style="<?=$type === 'image' ? 'display:none' : ''?>">
 					  <span class="input-group-addon">Header</span>
 					  <input name="r1" type="text" maxlength="100" class="form-control" value="<?=$v[0]?>" placeholder="boleh dikosongkan">
 					</div>
-					<div class="input">
-					  <textarea name="r2" maxlength="255" rows="3" class="form-control" ><?=$v[1]?></textarea>
+					<div class="input info-text-fields" style="<?=$type === 'image' ? 'display:none' : ''?>">
+					  <textarea name="r2" maxlength="255" rows="3" class="form-control" <?=$type === 'text' ? 'required' : ''?>><?=$v[1]?></textarea>
 					</div>
-					<div class="input-group">
+					<div class="input-group info-text-fields" style="<?=$type === 'image' ? 'display:none' : ''?>">
 					  <span class="input-group-addon">Footer</span>
 					  <input name="r3" type="text" maxlength="100" class="form-control" value="<?=$v[2]?>" placeholder="boleh dikosongkan">
+					</div>
+					<?php if(!is_int($k)): ?>
+					<div class="input" style="margin-top:8px">
+						<small>
+						- `Teks` menampilkan judul, isi, dan footer.<br>
+						- `Gambar penuh` menampilkan gambar besar memenuhi area konten seperti YouTube/PPT.
+						</small>
+					</div>
+					<?php endif; ?>
+					<div class="info-image-upload-box" style="<?=$type === 'image' ? '' : 'display:none'?>">
+						<?php if($image): ?>
+						<div class="input" style="margin:10px 0">
+							<div style="margin-bottom:8px"><small>Gambar aktif: <b><?=$image?></b></small></div>
+							<img src="display/info/<?=$image?>" alt="Preview info" class="img-responsive" style="max-height:220px;border:1px solid #ddd;padding:6px;background:#fff">
+						</div>
+						<?php endif; ?>
+						<div class="input-group" style="margin-top:10px">
+						  <span class="input-group-addon">Gambar</span>
+						  <input type="file" name="info_image" class="form-control input-sm" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" <?=($type === 'image' && !$image) ? 'required' : ''?>>
+						</div>
 					</div>
 					<div class="input-group">
 					  <span class="input-group-addon">Aktif</span>
@@ -589,9 +809,8 @@ class proses extends fb{
 					<div class="input">
 						<small>
 						- Ext file yang didukung :  <b>.jpg</b><br>
-						- Ukuran maksimal <b>2Mb</b><br>
 						- Maksimal 5 file dalam sekali upload<br>
-						- Tips : Jika ukuran gambar > 2Mb, cara cepat kompres gambar ⇒ kirim ke whatsapp :P
+						- Gunakan gambar yang proporsional agar loading wallpaper tetap nyaman
 						</small>
 					</div>
 				</div>
@@ -857,7 +1076,7 @@ class proses extends fb{
 			'info'	=> 'Jika diperlukan, aktifkan hanya di bulan ramadhan'
 		];
 		echo $this->generateCompleteForm($formTarawih,$setTarawih);
-		
+
 		echo '</div></div></section>';
 		$this->data .= ob_get_clean();
 		$this->retSuccess();
@@ -1263,6 +1482,93 @@ isha		= 18°
 			'
 		];
 		echo $this->generateCompleteForm($tune_,$set);
+
+		$arrActive = ['Ya' => 1, 'Tidak' => 0];
+		$imamMuadzin = $db['imamMuadzin'];
+		$formImamMuadzin = [
+			'tampilkan di wallpaper' => [
+				'name'	=> 'active',
+				'type'	=> 'select',
+				'arr'	=> $arrActive,
+				'value'	=> $imamMuadzin['active']
+			],
+			'Subuh - imam' => [
+				'name'		=> 'fajr_imam',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['fajr']['imam'],
+				'required'	=> false
+			],
+			'Subuh - muadzin' => [
+				'name'		=> 'fajr_muadzin',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['fajr']['muadzin'],
+				'required'	=> false
+			],
+			'Dzuhur - imam' => [
+				'name'		=> 'dhuhr_imam',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['dhuhr']['imam'],
+				'required'	=> false
+			],
+			'Dzuhur - muadzin' => [
+				'name'		=> 'dhuhr_muadzin',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['dhuhr']['muadzin'],
+				'required'	=> false
+			],
+			'Ashar - imam' => [
+				'name'		=> 'asr_imam',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['asr']['imam'],
+				'required'	=> false
+			],
+			'Ashar - muadzin' => [
+				'name'		=> 'asr_muadzin',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['asr']['muadzin'],
+				'required'	=> false
+			],
+			'Maghrib - imam' => [
+				'name'		=> 'maghrib_imam',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['maghrib']['imam'],
+				'required'	=> false
+			],
+			'Maghrib - muadzin' => [
+				'name'		=> 'maghrib_muadzin',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['maghrib']['muadzin'],
+				'required'	=> false
+			],
+			'Isya - imam' => [
+				'name'		=> 'isha_imam',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['isha']['imam'],
+				'required'	=> false
+			],
+			'Isya - muadzin' => [
+				'name'		=> 'isha_muadzin',
+				'type'		=> 'text',
+				'maxlength'	=> 100,
+				'value'		=> $imamMuadzin['isha']['muadzin'],
+				'required'	=> false
+			]
+		];
+		$setImamMuadzin = [
+			'id'	=> 'imamMuadzin',
+			'title'	=> 'Jadwal imam & muadzin',
+			'info'	=> 'Saat aktif, data ini siap dipakai untuk slide wallpaper/informasi. Kosongkan field yang belum ingin ditampilkan.'
+		];
+		echo $this->generateCompleteForm($formImamMuadzin, $setImamMuadzin);
 		
 		
 		echo '</div></div></section>';
@@ -1300,7 +1606,6 @@ isha		= 18°
 				<div class="input">
 					<small>
 					- Ext file yang didukung :  <b>.png</b><br>
-					- Ukuran maksimal <b>2Mb</b><br>
 					- Tips : jika logo tampil terlalu besar pada display, edit gambar pada image editor (contoh : photoshop) dan beri jarak kosong pada atas-bawah atau kiri-kanan gambar
 					</small>
 				</div>
