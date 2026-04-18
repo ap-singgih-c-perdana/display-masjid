@@ -1,5 +1,5 @@
 <?php
-include_once "../session.php";
+include_once __DIR__."/session.php";
 	$scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
 	if($scriptDir === '/' || $scriptDir === '.'){
 		$scriptDir = '';
@@ -78,6 +78,6 @@ if (file_exists($file)){
 			'displayBaseUrl' => ($appBaseUrl === '' ? '' : $appBaseUrl).'/display'
 		], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)?>;
 	</script>
-	<script src="js/admin-login.js?v=<?=filemtime(__DIR__.'/../js/admin-login.js')?>"></script>
+	<script src="admin/js/admin-login.js?v=<?=filemtime(__DIR__.'/js/admin-login.js')?>"></script>
 </body>
 </html>

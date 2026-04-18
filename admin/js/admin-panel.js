@@ -578,22 +578,25 @@ var app = {
 	},
 	*/
 	renderTable: function(id,col,row){
-		app.tabelId.destroy();
-		$('#'+id+' .table tbody').empty();
-		app.tabelId = $('#'+id+' .table').DataTable( {
+		var dataTableOptions = {
 			data: row,
 			columns: col,
 			"lengthMenu": [[5, 10, 20, 25, 50, 100, 500, -1], [5, 10, 20, 25, 50, 100, 500, "All"]],
 			"pageLength": 20,
-			dom: 'Bfrtip',
-			buttons: [
-				'pageLength',
-				'copyHtml5'
-			],
 			"initComplete": function(){
 				// $('table').fadeIn(500);
 			}
-		} );
+		};
+		if($.fn.dataTable && $.fn.dataTable.Buttons){
+			dataTableOptions.dom = 'Bfrtip';
+			dataTableOptions.buttons = [
+				'pageLength',
+				'copyHtml5'
+			];
+		}
+		app.tabelId.destroy();
+		$('#'+id+' .table tbody').empty();
+		app.tabelId = $('#'+id+' .table').DataTable(dataTableOptions);
 	},
 	getRndInteger:function(min, max) {
 	  return Math.floor(Math.random() * (max - min) ) + min;

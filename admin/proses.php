@@ -3,10 +3,10 @@
 // print_r($_FILES);
 // die;
 
-include_once __DIR__."/../session.php";
-include_once __DIR__."/../includes/proses/ProsesDatabaseTrait.php";
-include_once __DIR__."/../includes/proses/ProsesFormRenderTrait.php";
-include_once __DIR__."/../includes/proses/ProsesDashboardViewTrait.php";
+include_once __DIR__."/session.php";
+include_once __DIR__."/includes/proses/ProsesDatabaseTrait.php";
+include_once __DIR__."/includes/proses/ProsesFormRenderTrait.php";
+include_once __DIR__."/includes/proses/ProsesDashboardViewTrait.php";
 
 class proses extends fb{
 	use ProsesDatabaseTrait;

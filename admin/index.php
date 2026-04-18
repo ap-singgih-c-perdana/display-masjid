@@ -1,5 +1,5 @@
 <?php
-include_once "../session.php";
+include_once __DIR__."/session.php";
 	$scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
 	if($scriptDir === '/' || $scriptDir === '.'){
 		$scriptDir = '';
@@ -186,8 +186,6 @@ if (file_exists($file)){
 	<script src="vendor/js/moment-with-locales.js"></script>
 	<script src="dist/js/bootstrap-datetimepicker.min.js"></script>
 	<script src="dist/js/datatables.min.js"></script>
-	<script src="dist/js/dataTables.buttons.min.js"></script>
-	<script src="dist/js/buttons.html5.min.js"></script>
 	<script src="vendor/js/PrayTimes.js"></script>
 	<script>
 		window.ADMIN_CONFIG = <?=json_encode([
@@ -197,6 +195,6 @@ if (file_exists($file)){
 			'displayBaseUrl' => ($appBaseUrl === '' ? '' : $appBaseUrl).'/display'
 		], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)?>;
 	</script>
-	<script src="js/admin-panel.js?v=<?=filemtime(__DIR__.'/../js/admin-panel.js')?>"></script>
+	<script src="admin/js/admin-panel.js?v=<?=filemtime(__DIR__.'/js/admin-panel.js')?>"></script>
 </body>
 </html>
