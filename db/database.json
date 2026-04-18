@@ -69,7 +69,7 @@
         "wait_adzan": "1",
         "countdown_alarm": "7",
         "adzan": "1",
-        "sholat": "100"
+        "sholat": "1"
     },
     "iqomah": {
         "fajr": "1",
@@ -108,9 +108,17 @@
             "",
             "aerysghfdjgfd ouygfiuyg uyguygoug oiuhpi io",
             "",
-            "1",
+            "0",
             "",
             "text"
+        ],
+        [
+            "",
+            "",
+            "",
+            "1",
+            "info-1776445406.png",
+            "image"
         ]
     ],
     "running_text": [

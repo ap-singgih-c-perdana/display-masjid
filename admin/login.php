@@ -1,10 +1,18 @@
 <?php
-include_once "session.php";
+include_once "../session.php";
+	$scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+	if($scriptDir === '/' || $scriptDir === '.'){
+		$scriptDir = '';
+	}
+	$appBaseUrl = preg_replace('#/admin$#', '', rtrim($scriptDir, '/'));
+	$adminBaseUrl = $appBaseUrl.'/admin';
+	$displayUrl = ($appBaseUrl === '' ? '' : $appBaseUrl).'/';
 if(isset($_SESSION["user_id"])){
-	header("Location: index.php");
+	header("Location: ".$adminBaseUrl."/");
+	exit;
 }
 // print_r ($_SESSION);die;
-$file	= 'db/database.json';
+$file	= '../db/database.json';
 $name	= '';
 if (file_exists($file)){
 	$json 	= file_get_contents($file);
@@ -17,6 +25,7 @@ if (file_exists($file)){
 <!DOCTYPE html>
 <html>
 <head>
+	<base href="../">
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<title>Display|Masjid|Admin</title>
@@ -37,7 +46,7 @@ if (file_exists($file)){
 	  </div>
 	  <div class="login-box-body">
 		<h4 class="login-box-msg" style="border-bottom:0.7px solid #ccc;padding:5px 0">Halaman login - <?=$name?></h4>
-		<form method="post" style="margin-top:10px">
+		<form method="post" class="js-login-form" data-redirect="<?=$adminBaseUrl?>/" style="margin-top:10px">
 		  <div class="form-group has-feedback">
 			<input name="user" type="text" class="form-control" placeholder="User" required>
 			<span class="form-control-feedback"><i class="fa fa-user" aria-hidden="true"></i></span>
@@ -48,7 +57,7 @@ if (file_exists($file)){
 		  </div>
 		  <div class="row" style="margin-top:50px">
 			<div class="col-xs-6">
-			  <a href="/display" class="btn btn-default btn-block btn-flat"><i class="fa fa-desktop" aria-hidden="true"></i> Ke Display</a>
+			  <a href="<?=$displayUrl?>" class="btn btn-default btn-block btn-flat"><i class="fa fa-desktop" aria-hidden="true"></i> Ke Display</a>
 			</div>
 			<div class="col-xs-6">
 			  <button type="submit" class="btn btn-primary btn-block btn-flat"><i class="fa fa-sign-in" aria-hidden="true"></i> Sign In</button>
@@ -58,40 +67,17 @@ if (file_exists($file)){
 	  </div>
 	</div>
 	
-	<script src="dist/js/jquery.min.js"></script>
-	<script src="dist/js/bootstrap.min.js"></script>
+	<script src="vendor/js/jquery.min.js"></script>
+	<script src="vendor/js/bootstrap.min.js"></script>
 	<script src="dist/js/adminlte.min.js"></script>
 	<script>
-		$(document).on('submit','form',function(event){
-			$btn	= $(this).find('button.btn-primary');
-			btnText	= $btn.html();
-			arr		= {};
-			$btn.html('<i class="fa fa-spinner fa-pulse"></i> loading...').attr('disabled','disabled');
-			$.each($(this).serializeArray(), function( k, v ){
-				arr[v.name]	= v.value;
-			});
-			
-			$.ajax({  
-				type    : "POST",  
-				url     : "proses.php",
-				dataType: "json",
-				data    : {id:'login',dt:arr}
-			}).done(function(dt){
-				if(dt.registered){
-					location.reload();
-				}
-				else{
-					alert(dt.data);
-					$('#pass').val('').focus();
-					$btn.html(btnText).removeAttr('disabled');
-				}
-			}).fail(function(msg){
-				alert(msg.status+"\n"+msg.statusText);
-				$btn.html(btnText).removeAttr('disabled');
-			});
-			event.preventDefault();
-		});
-		
+		window.ADMIN_CONFIG = <?=json_encode([
+			'appBaseUrl' => $appBaseUrl,
+			'adminBaseUrl' => $adminBaseUrl,
+			'processUrl' => $adminBaseUrl.'/proses.php',
+			'displayBaseUrl' => ($appBaseUrl === '' ? '' : $appBaseUrl).'/display'
+		], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)?>;
 	</script>
+	<script src="js/admin-login.js?v=<?=filemtime(__DIR__.'/../js/admin-login.js')?>"></script>
 </body>
 </html>

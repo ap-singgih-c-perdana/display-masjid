@@ -6,7 +6,7 @@
 
 	// var_dump(PHP_OS);
 	// die;
-	$file	= '../db/database.json';
+	$file	= __DIR__.'/../db/database.json';
 	if (!file_exists($file)){
 		echo "<h1>Jalankan admin terlebih dahulu</h1>";
 		die;
@@ -15,6 +15,12 @@
 	$db		= json_decode($json, true);
 	$showDb	= $db;
 	unset($showDb['akses']);
+	$scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+	if($scriptDir === '/' || $scriptDir === '.'){
+		$scriptDir = '';
+	}
+	$appBaseUrl = rtrim($scriptDir, '/');
+	$displayBaseUrl = $appBaseUrl.'/display';
 
 	$getInfoImage = function($item){
 		return isset($item[4]) ? trim($item[4]) : '';
@@ -74,19 +80,19 @@
 	
 	//Logo
 	// nge trik ==> kalo replace file, di display logo yang lama masih kesimpen di cache ==> solusi ganti logo ganti nama file 
-	$dirLogo	= 'logo/';
+	$dirLogo	= __DIR__.'/logo/';
 	$filesLogo	= array_diff(scandir($dirLogo),array('.','..','Thumbs.db','.DS_Store'));
 	$filesLogo	= array_values($filesLogo);//re index
 	$logo		= $filesLogo[0];
 	
 	
-	$dir	= 'wallpaper/';
+	$dir	= __DIR__.'/wallpaper/';
 	$files	= array_diff(scandir($dir),array('.','..','Thumbs.db','.DS_Store'));
 	$wallpaper	= '';
 	$i	= 0;
 	foreach($files as $v){
 		$active	= $i==0?'active':'';
-		$wallpaper	.= '<div class="item slides '.$active.'"><div style="background-image: url(wallpaper/'.$v.');"></div></div>';
+		$wallpaper	.= '<div class="item slides '.$active.'"><div style="background-image: url('.$displayBaseUrl.'/wallpaper/'.$v.');"></div></div>';
 		$i++;
 	}
 	// print_r($files);die;
@@ -100,11 +106,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Display|Masjid</title>
-    <link rel="icon" type="image/png" href="../icon.png"/>
+    <link rel="icon" type="image/png" href="<?=$appBaseUrl?>/icon.png"/>
     <!-- Bootstrap -->
-    <link href="css/bootstrap.min.css?v=<?=filemtime('css/bootstrap.min.css')?> " rel="stylesheet">
-    <link href="css/font-awesome.min.css?v=<?=filemtime('css/font-awesome.min.css')?> " rel="stylesheet">
-    <link href="css/style.css?v=<?=filemtime('css/style.css')?> " rel="stylesheet">
+    <link href="<?=$displayBaseUrl?>/css/bootstrap.min.css?v=<?=filemtime(__DIR__.'/css/bootstrap.min.css')?> " rel="stylesheet">
+    <link href="<?=$displayBaseUrl?>/css/font-awesome.min.css?v=<?=filemtime(__DIR__.'/css/font-awesome.min.css')?> " rel="stylesheet">
+    <link href="<?=$displayBaseUrl?>/css/style.css?v=<?=filemtime(__DIR__.'/css/style.css')?> " rel="stylesheet">
 	<style>
 		
 	</style>
@@ -166,7 +172,7 @@
 						<div class="item slides '.($i==0?'active':'').'">
 						  <div class="hero '.($type === 'image' ? 'info-image-only' : '').'">        
 							'.($type === 'image'
-								? '<div class="info-image-slide"><div class="info-image-frame">'.($image?'<img class="info-image-full" src="info/'.htmlentities($image).'" alt="Info image">':'<div class="info-image-empty">Upload gambar untuk slide ini</div>').'</div></div>'
+								? '<div class="info-image-slide"><div class="info-image-frame">'.($image?'<img class="info-image-full" src="'.$displayBaseUrl.'/info/'.htmlentities($image).'" alt="Info image">':'<div class="info-image-empty">Upload gambar untuk slide ini</div>').'</div></div>'
 								: '<hgroup>
 								<div class="text1">'.htmlentities($v[0]).'</div>        
 								<div class="text2">'.nl2br(htmlentities($v[1])).'</div>        
@@ -221,7 +227,7 @@
 				</iframe>
 			</div>
 		</div>
-		<div id="logo" style="background-image: url(logo/<?=$logo?>);"></div>
+		<div id="logo" style="background-image: url(<?=$displayBaseUrl?>/logo/<?=$logo?>);"></div>
 		<div id="running-text">
 			<div class="item">
 				<?php 
@@ -249,14 +255,16 @@
 			</div>
 		</div>
 	</div>
-    <script src="js/jquery-3.4.1.min.js?v=<?=filemtime('js/jquery-3.4.1.min.js')?>"></script>
-    <script src="js/bootstrap.min.js?v=<?=filemtime('js/bootstrap.min.js')?>"></script>
-    <script src="js/moment-with-locales.js?v=<?=filemtime('js/moment-with-locales.js')?>"></script>
-    <script src="js/PrayTimes.js?v=<?=filemtime('js/PrayTimes.js')?>"></script>
-    <script src="js/jquery.marquee.js?v=<?=filemtime('js/jquery.marquee.js')?>"></script>
+    <script src="<?=$appBaseUrl?>/vendor/js/jquery.min.js?v=<?=filemtime(__DIR__.'/../vendor/js/jquery.min.js')?>"></script>
+    <script src="<?=$appBaseUrl?>/vendor/js/bootstrap-display.min.js?v=<?=filemtime(__DIR__.'/../vendor/js/bootstrap-display.min.js')?>"></script>
+    <script src="<?=$appBaseUrl?>/vendor/js/moment-with-locales.js?v=<?=filemtime(__DIR__.'/../vendor/js/moment-with-locales.js')?>"></script>
+    <script src="<?=$appBaseUrl?>/vendor/js/PrayTimes.js?v=<?=filemtime(__DIR__.'/../vendor/js/PrayTimes.js')?>"></script>
+    <script src="<?=$appBaseUrl?>/vendor/js/jquery.marquee.js?v=<?=filemtime(__DIR__.'/../vendor/js/jquery.marquee.js')?>"></script>
     <script>
 		window.DISPLAY_CONFIG = <?=json_encode([
 			'db' => $showDb,
+			'appBaseUrl' => $appBaseUrl,
+			'displayBaseUrl' => $displayBaseUrl,
 			'lat' => $db['setting']['latitude'],
 			'lng' => $db['setting']['longitude'],
 			'timeZone' => $db['setting']['timeZone'],
@@ -270,11 +278,11 @@
 			})
 		], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)?>;
 	</script>
-	<script src="js/app.core.js?v=<?=filemtime('js/app.core.js')?>"></script>
-	<script src="js/app.running-text.js?v=<?=filemtime('js/app.running-text.js')?>"></script>
-	<script src="js/app.media.js?v=<?=filemtime('js/app.media.js')?>"></script>
-	<script src="js/app.schedule.js?v=<?=filemtime('js/app.schedule.js')?>"></script>
-	<script src="js/app.countdown.js?v=<?=filemtime('js/app.countdown.js')?>"></script>
-	<script src="js/app.js?v=<?=filemtime('js/app.js')?>"></script>
+	<script src="<?=$displayBaseUrl?>/js/app.core.js?v=<?=filemtime(__DIR__.'/js/app.core.js')?>"></script>
+	<script src="<?=$displayBaseUrl?>/js/app.running-text.js?v=<?=filemtime(__DIR__.'/js/app.running-text.js')?>"></script>
+	<script src="<?=$displayBaseUrl?>/js/app.media.js?v=<?=filemtime(__DIR__.'/js/app.media.js')?>"></script>
+	<script src="<?=$displayBaseUrl?>/js/app.schedule.js?v=<?=filemtime(__DIR__.'/js/app.schedule.js')?>"></script>
+	<script src="<?=$displayBaseUrl?>/js/app.countdown.js?v=<?=filemtime(__DIR__.'/js/app.countdown.js')?>"></script>
+	<script src="<?=$displayBaseUrl?>/js/app.js?v=<?=filemtime(__DIR__.'/js/app.js')?>"></script>
 </body>
 </html>

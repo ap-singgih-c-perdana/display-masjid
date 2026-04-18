@@ -145,7 +145,7 @@
 			var app = this;
 			$.ajax({
 				type: 'POST',
-				url: '../proses.php',
+				url: ((app.config && app.config.appBaseUrl) ? app.config.appBaseUrl : '') + '/admin/proses.php',
 				dataType: 'json',
 				data: {id: 'changeDbCheck'}
 			}).done(function(dt){

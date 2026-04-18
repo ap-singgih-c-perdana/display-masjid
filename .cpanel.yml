@@ -1,4 +1,0 @@
----
-deployment:
-  tasks:
-    - touch /home/sink4858/deploy-test.txt
