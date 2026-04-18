@@ -182,7 +182,7 @@
 
 		countDownCalculate: function(jam){
 			var app = this;
-			var jamSekarang = app.debugTime ? app.debugTime.clone() : moment();
+			var jamSekarang = app.debugTime ? app.debugTime.clone() : moment(app.getServerNowMs());
 			var distance = Math.round(jam.diff(jamSekarang, 'seconds', true));
 			var hours = Math.floor((distance % (60 * 60 * 24)) / (60 * 60));
 			var minutes = Math.floor((distance % (60 * 60)) / 60);

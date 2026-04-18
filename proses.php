@@ -372,7 +372,10 @@ class proses extends fb{
 		$logo	= 'display/logo/'.$this->getLogo();
 		
 		$combine	= json_encode($db).json_encode($wp).filesize($logo);
-		$this->data = sha1($combine).strlen($combine);//hemat ram... hahaha....
+		$this->data = [
+			'hash' => sha1($combine).strlen($combine),//hemat ram... hahaha....
+			'serverNowMs' => (int) round(microtime(true) * 1000)
+		];
 		$this->retSuccess();
 	}
 	

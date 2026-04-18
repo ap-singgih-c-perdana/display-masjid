@@ -591,12 +591,31 @@ Image credits: unsplash.com
 	right: 0.35vw;
 	height:100%;
 	overflow: hidden;
-	
+	display:flex;
+	align-items:center;
 	font-family: 'Titillium Web', Helvetica, Arial, sans-serif; 
 	padding-top: 0.82vw;
 	font-size: 3.8vw;
 	font-weight: bold;
 	white-space: nowrap;
+}
+
+#running-text .item.running-text-ready{
+	padding-top: 0;
+}
+
+#running-text .running-text-track{
+	display:inline-flex;
+	align-items:center;
+	will-change: transform;
+	white-space: nowrap;
+}
+
+#running-text .running-text-copy{
+	display:inline-flex;
+	align-items:center;
+	white-space: nowrap;
+	padding-top: 0.82vw;
 }
 
 

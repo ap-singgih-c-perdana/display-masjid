@@ -22,6 +22,16 @@
 	$getInfoType = function($item){
 		return isset($item[5]) && $item[5] === 'image' ? 'image' : 'text';
 	};
+	$getInfoImagePath = function($image){
+		return 'info/'.$image;
+	};
+	$getInfoImageUrl = function($image) use ($getInfoImagePath){
+		$path = $getInfoImagePath($image);
+		if(!$image || !file_exists($path)){
+			return '';
+		}
+		return $path.'?v='.filemtime($path);
+	};
 	$hasImamMuadzinData = function($data){
 		if(!is_array($data)){
 			return false;
@@ -130,7 +140,7 @@
 	<div id="display-khutbah" class="full-screen" style="display:none"><div></div></div>
 	
 	
-	<div class="carousel fade-carousel slide" data-ride="carousel" data-interval="<?=$wallpaper_timer?>">
+	<div class="carousel fade-carousel slide">
 	  <!-- Overlay -->
 	  <div class="overlay"></div>
 	  <!-- Wrapper for slides -->
@@ -154,7 +164,7 @@
 	</div>
 	<div id="right-container">
 		<div id="quote">
-			<div class="carousel quote-carousel slide" data-ride="carousel" data-interval="<?=$info_timer?>" data-pause="null">
+			<div class="carousel quote-carousel slide">
 			  <div class="carousel-inner">
 				<?php 
 				$i=0;
@@ -162,11 +172,12 @@
 					if($v[3]){
 						$image = $getInfoImage($v);
 						$type = $getInfoType($v);
+						$imageUrl = $type === 'image' ? $getInfoImageUrl($image) : '';
 						echo '
 						<div class="item slides '.($i==0?'active':'').'">
 						  <div class="hero '.($type === 'image' ? 'info-image-only' : '').'">        
 							'.($type === 'image'
-								? '<div class="info-image-slide"><div class="info-image-frame">'.($image?'<img class="info-image-full" src="info/'.htmlentities($image).'" alt="Info image">':'<div class="info-image-empty">Upload gambar untuk slide ini</div>').'</div></div>'
+								? '<div class="info-image-slide"><div class="info-image-frame">'.($imageUrl !== '' ? '<img class="info-image-full" src="'.htmlentities($imageUrl).'" alt="Info image">' : '<div class="info-image-empty">File gambar slide tidak ditemukan. Silakan upload ulang dari admin.</div>').'</div></div>'
 								: '<hgroup>
 								<div class="text1">'.htmlentities($v[0]).'</div>        
 								<div class="text2">'.nl2br(htmlentities($v[1])).'</div>        
@@ -254,13 +265,14 @@
     <script src="js/moment-with-locales.js?v=<?=filemtime('js/moment-with-locales.js')?>"></script>
     <script src="js/PrayTimes.js?v=<?=filemtime('js/PrayTimes.js')?>"></script>
     <script src="js/jquery.marquee.js?v=<?=filemtime('js/jquery.marquee.js')?>"></script>
-    <script>
+	<script>
 		window.DISPLAY_CONFIG = <?=json_encode([
 			'db' => $showDb,
 			'lat' => $db['setting']['latitude'],
 			'lng' => $db['setting']['longitude'],
 			'timeZone' => $db['setting']['timeZone'],
 			'dst' => $db['setting']['dst'],
+			'serverNowMs' => (int) round(microtime(true) * 1000),
 			'prayTimesMethod' => $db['prayTimesMethod'],
 			'prayTimesAdjust' => array_filter($db['prayTimesAdjust'], function($value){
 				return $value !== '';
