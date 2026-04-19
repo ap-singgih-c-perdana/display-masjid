@@ -28,8 +28,11 @@
 		jadwalHariIni: {},
 		jadwalBesok: {},
 		jadwalCache: {},
+		serverTimeOffsetMs: 0,
 		uiTimer: false,
+		uiTickTimeout: false,
 		dbCheckTimer: false,
+		visualSyncHandle: false,
 		adzanDisplayTimer: false,
 		activeCountdownTimer: false,
 		fullscreenMessageTimer: false,
@@ -54,19 +57,57 @@
 		initialize: function(){
 			var app = this;
 			app.initDebugTime();
+			app.initTimeSync();
 			app.initAudioUnlock();
-			app.initRunningText();
-			app.setupQuoteAutoFit();
-			app.setupYoutube();
-			app.setupPpt();
-			app.primeJadwal();
 			document.addEventListener('fullscreenchange', app.handleFullscreenChange);
 			document.addEventListener('webkitfullscreenchange', app.handleFullscreenChange);
-			app.updateUi();
-			app.checkDatabaseChanges();
-			app.uiTimer = setInterval(function(){ app.updateUi(); }, 1000);
-			app.dbCheckTimer = setInterval(function(){ app.checkDatabaseChanges(); }, 5000);
+			document.addEventListener('visibilitychange', function(){
+				if(!document.hidden){
+					app.resyncVisualState();
+					app.scheduleNextUiTick(true);
+				}
+			});
+			$(window).on('focus', function(){
+				app.resyncVisualState();
+				app.scheduleNextUiTick(true);
+			});
+
+			app.checkDatabaseChanges(function(){
+				app.setupSynchronizedCarousels();
+				app.initRunningText();
+				app.setupQuoteAutoFit();
+				app.setupYoutube();
+				app.setupPpt();
+				app.primeJadwal();
+				app.updateUi();
+				app.scheduleNextUiTick(true);
+				app.dbCheckTimer = setInterval(function(){ app.checkDatabaseChanges(); }, 5000);
+			});
 			$('#preloader').delay(350).fadeOut('slow');
+		},
+
+		initTimeSync: function(){
+			if(this.config.serverNowMs){
+				this.applyServerTimeSync(this.config.serverNowMs, Date.now(), Date.now(), true);
+			}
+		},
+
+		applyServerTimeSync: function(serverNowMs, requestStartedAt, responseReceivedAt, force){
+			var clientReference = responseReceivedAt || Date.now();
+			var newOffset;
+			if(requestStartedAt){
+				clientReference = requestStartedAt + ((clientReference - requestStartedAt) / 2);
+			}
+			newOffset = serverNowMs - clientReference;
+			if(force || !this.serverTimeOffsetMs){
+				this.serverTimeOffsetMs = newOffset;
+				return;
+			}
+			this.serverTimeOffsetMs = Math.round((this.serverTimeOffsetMs * 0.8) + (newOffset * 0.2));
+		},
+
+		getServerNowMs: function(){
+			return Date.now() + this.serverTimeOffsetMs;
 		},
 
 		initAudioUnlock: function(){
@@ -122,7 +163,15 @@
 
 		now: function(){
 			var app = this;
-			if(!app.debugTime) return moment();
+			if(!app.debugTime) return moment(app.getServerNowMs());
+			return app.debugTime.clone();
+		},
+
+		getDisplayMoment: function(){
+			var app = this;
+			if(!app.debugTime){
+				return moment(app.getServerNowMs());
+			}
 			var current = app.debugTime.clone();
 			app.debugTime.add(1, 'seconds');
 			return current;
@@ -130,7 +179,7 @@
 
 		updateUi: function(){
 			var app = this;
-			var now = app.now();
+			var now = app.getDisplayMoment();
 			if(!app.tglHariIni || now.format('YYYY-MM-DD') != moment(app.tglHariIni).format('YYYY-MM-DD')){
 				app.tglHariIni = now.clone();
 				app.tglBesok = now.clone().add(1, 'days');
@@ -141,22 +190,61 @@
 			app.displaySchedule(now.clone());
 		},
 
-		checkDatabaseChanges: function(){
+		scheduleNextUiTick: function(force){
 			var app = this;
+			var delay;
+			if(app.uiTickTimeout){
+				clearTimeout(app.uiTickTimeout);
+				app.uiTickTimeout = false;
+			}
+			delay = 1000 - (app.getServerNowMs() % 1000);
+			if(force){
+				delay += 15;
+			}
+			if(delay < 15){
+				delay += 1000;
+			}
+			app.uiTickTimeout = setTimeout(function(){
+				app.updateUi();
+				app.scheduleNextUiTick(false);
+			}, delay);
+		},
+
+		updateSyncStateFromPayload: function(payload, requestStartedAt, responseReceivedAt){
+			var hash = payload;
+			if(payload && typeof payload === 'object'){
+				hash = payload.hash || '';
+				if(payload.serverNowMs){
+					this.applyServerTimeSync(payload.serverNowMs, requestStartedAt, responseReceivedAt);
+				}
+			}
+			return hash;
+		},
+
+		checkDatabaseChanges: function(done){
+			var app = this;
+			var requestStartedAt = Date.now();
 			$.ajax({
 				type: 'POST',
 				url: '../proses.php',
 				dataType: 'json',
 				data: {id: 'changeDbCheck'}
 			}).done(function(dt){
-				if(app.cekDb === false) app.cekDb = dt.data;
-				else if(app.cekDb !== dt.data){
-					app.cekDb = dt.data;
+				var responseReceivedAt = Date.now();
+				var hash = app.updateSyncStateFromPayload(dt.data, requestStartedAt, responseReceivedAt);
+				if(app.cekDb === false) app.cekDb = hash;
+				else if(app.cekDb !== hash){
+					app.cekDb = hash;
 					if(app.isBrowserFullscreen()) app.pendingReload = true;
 					else location.reload();
 				}
+				app.resyncVisualState();
 			}).fail(function(){
 				return false;
+			}).always(function(){
+				if(typeof done === 'function'){
+					done();
+				}
 			});
 		},
 
@@ -301,6 +389,16 @@
 					fn.apply(context, args);
 				}, wait);
 			};
+		},
+
+		resyncVisualState: function(){
+			var app = this;
+			if(typeof app.syncAllCarousels === 'function'){
+				app.syncAllCarousels(true);
+			}
+			if(typeof app.syncRunningTextPosition === 'function'){
+				app.syncRunningTextPosition();
+			}
 		}
 	};
 })(window, jQuery);

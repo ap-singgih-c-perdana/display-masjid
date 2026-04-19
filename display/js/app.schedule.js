@@ -144,7 +144,7 @@
 		getNextPray: function(){
 			var app = this;
 			if(!app.isJadwalReady()) return false;
-			var jamSekarang = app.debugTime ? app.debugTime.clone() : moment();
+			var jamSekarang = app.debugTime ? app.debugTime.clone() : moment(app.getServerNowMs());
 			var nextPray = 'fajr';
 			var jadwalDipake = false;
 			if(jamSekarang > app.isha){
