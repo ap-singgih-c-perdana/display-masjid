@@ -11,24 +11,21 @@
 			$runningText.empty().addClass('running-text-ready');
 			$runningText.append('<div class="running-text-track"><div class="running-text-copy">' + html + '</div><div class="running-text-copy" aria-hidden="true">' + html + '</div></div>');
 			app.runningTextState = {
+				$container: $('#running-text'),
 				$item: $runningText,
 				$track: $runningText.find('.running-text-track'),
 				$copies: $runningText.find('.running-text-copy'),
 				gap: 120,
-				speedPxPerSecond: 100,
+				speedPxPerSecond: 80,
 				cycleWidth: 0,
 				containerWidth: 0,
-				lastFrameAt: 0,
-				offsetX: 0,
-				frameHandle: false,
-				resizeHandler: false
+				frameHandle: false
 			};
 			app.measureRunningText();
 			app.startRunningTextLoop();
-			app.runningTextState.resizeHandler = app.debounce(function(){
+			$(window).on('resize', app.debounce(function(){
 				app.measureRunningText();
-			}, 120);
-			$(window).on('resize', app.runningTextState.resizeHandler);
+			}, 120));
 			if(document.fonts && document.fonts.ready){
 				document.fonts.ready.then(function(){
 					app.measureRunningText();
@@ -37,20 +34,17 @@
 		},
 
 		measureRunningText: function(){
-			var state = this.runningTextState;
+			var app = this;
+			var state = app.runningTextState;
 			var copyWidth;
 			if(!state) return;
 			state.containerWidth = state.$item.innerWidth();
 			state.gap = Math.max(80, Math.round(state.containerWidth * 0.08));
-			state.$track.css('gap', state.gap + 'px');
 			copyWidth = Math.ceil(state.$copies.first().outerWidth(true));
 			state.cycleWidth = copyWidth + state.gap;
-			if(!state.cycleWidth){
-				return;
-			}
-			state.offsetX = state.containerWidth;
-			state.lastFrameAt = 0;
-			state.$track.css('transform', 'translate3d(' + state.offsetX.toFixed(2) + 'px, 0, 0)');
+			state.$track.css('gap', state.gap + 'px');
+			state.$copies.css('padding-right', '0');
+			app.syncRunningTextPosition();
 		},
 
 		startRunningTextLoop: function(){
@@ -59,41 +53,25 @@
 			if(!state || state.frameHandle){
 				return;
 			}
-			var updateFrame = function(timestamp){
-				app.updateRunningTextFrame(timestamp);
+			var updateFrame = function(){
+				app.syncRunningTextPosition();
 				state.frameHandle = window.requestAnimationFrame(updateFrame);
 			};
 			state.frameHandle = window.requestAnimationFrame(updateFrame);
 		},
 
-		updateRunningTextFrame: function(timestamp){
-			var state = this.runningTextState;
-			var elapsedSeconds;
-			if(!state || !state.cycleWidth || document.hidden){
-				if(state){
-					state.lastFrameAt = 0;
-				}
-				return;
-			}
-			if(!state.lastFrameAt){
-				state.lastFrameAt = timestamp;
-				return;
-			}
-			elapsedSeconds = Math.min((timestamp - state.lastFrameAt) / 1000, 0.033);
-			state.lastFrameAt = timestamp;
-			state.offsetX -= state.speedPxPerSecond * elapsedSeconds;
-			if(state.offsetX <= (state.containerWidth - state.cycleWidth)){
-				state.offsetX += state.cycleWidth;
-			}
-			state.$track.css('transform', 'translate3d(' + state.offsetX.toFixed(2) + 'px, 0, 0)');
-		},
-
 		syncRunningTextPosition: function(){
 			var state = this.runningTextState;
-			if(!state){
+			var cycleDurationMs;
+			var progress;
+			var offsetX;
+			if(!state || !state.cycleWidth){
 				return;
 			}
-			state.lastFrameAt = 0;
+			cycleDurationMs = (state.cycleWidth / state.speedPxPerSecond) * 1000;
+			progress = (this.getServerNowMs() % cycleDurationMs) / cycleDurationMs;
+			offsetX = state.containerWidth - (progress * state.cycleWidth);
+			state.$track.css('transform', 'translate3d(' + offsetX.toFixed(2) + 'px, 0, 0)');
 		}
 	});
 })(window, jQuery);
