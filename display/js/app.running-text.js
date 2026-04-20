@@ -16,7 +16,7 @@
 				$track: $runningText.find('.running-text-track'),
 				$copies: $runningText.find('.running-text-copy'),
 				gap: 120,
-				speedPxPerSecond: 160,
+				speedPxPerSecond: 100,
 				cycleWidth: 0,
 				containerWidth: 0,
 				frameHandle: false
