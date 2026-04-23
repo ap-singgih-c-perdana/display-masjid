@@ -59,6 +59,12 @@
 			app.initDebugTime();
 			app.initTimeSync();
 			app.initAudioUnlock();
+			app.initRunningText();
+			app.setupQuoteAutoFit();
+			app.setupYoutube();
+			app.setupPpt();
+			app.setupSynchronizedCarousels();
+			app.primeJadwal();
 			document.addEventListener('fullscreenchange', app.handleFullscreenChange);
 			document.addEventListener('webkitfullscreenchange', app.handleFullscreenChange);
 			document.addEventListener('visibilitychange', function(){
@@ -71,18 +77,10 @@
 				app.resyncVisualState();
 				app.scheduleNextUiTick(true);
 			});
-
-			app.checkDatabaseChanges(function(){
-				app.setupSynchronizedCarousels();
-				app.initRunningText();
-				app.setupQuoteAutoFit();
-				app.setupYoutube();
-				app.setupPpt();
-				app.primeJadwal();
-				app.updateUi();
-				app.scheduleNextUiTick(true);
-				app.dbCheckTimer = setInterval(function(){ app.checkDatabaseChanges(); }, 5000);
-			});
+			app.updateUi();
+			app.checkDatabaseChanges();
+			app.scheduleNextUiTick(true);
+			app.dbCheckTimer = setInterval(function(){ app.checkDatabaseChanges(); }, 5000);
 			$('#preloader').delay(350).fadeOut('slow');
 		},
 
@@ -221,7 +219,7 @@
 			return hash;
 		},
 
-		checkDatabaseChanges: function(done){
+		checkDatabaseChanges: function(){
 			var app = this;
 			var requestStartedAt = Date.now();
 			$.ajax({
@@ -241,10 +239,6 @@
 				app.resyncVisualState();
 			}).fail(function(){
 				return false;
-			}).always(function(){
-				if(typeof done === 'function'){
-					done();
-				}
 			});
 		},
 
@@ -395,9 +389,6 @@
 			var app = this;
 			if(typeof app.syncAllCarousels === 'function'){
 				app.syncAllCarousels(true);
-			}
-			if(typeof app.syncRunningTextPosition === 'function'){
-				app.syncRunningTextPosition();
 			}
 		}
 	};
