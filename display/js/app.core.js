@@ -222,6 +222,7 @@
 		checkDatabaseChanges: function(){
 			var app = this;
 			var requestStartedAt = Date.now();
+			var shouldResyncVisual = false;
 			$.ajax({
 				type: 'POST',
 				url: '../proses.php',
@@ -230,13 +231,18 @@
 			}).done(function(dt){
 				var responseReceivedAt = Date.now();
 				var hash = app.updateSyncStateFromPayload(dt.data, requestStartedAt, responseReceivedAt);
-				if(app.cekDb === false) app.cekDb = hash;
+				if(app.cekDb === false){
+					app.cekDb = hash;
+				}
 				else if(app.cekDb !== hash){
 					app.cekDb = hash;
+					shouldResyncVisual = true;
 					if(app.isBrowserFullscreen()) app.pendingReload = true;
 					else location.reload();
 				}
-				app.resyncVisualState();
+				if(shouldResyncVisual){
+					app.resyncVisualState();
+				}
 			}).fail(function(){
 				return false;
 			});
