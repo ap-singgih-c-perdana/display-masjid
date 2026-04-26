@@ -214,6 +214,7 @@ class proses extends fb{
 				'Selamat datang di aplikasi Display-Masjid',
 				'Silakan masuk ke menu admin untuk mengubah data'
 			],
+			'running_text_speed' => 50,
 			'youtube' => [
 				'active'	=> false,
 				'url'		=> '',
@@ -430,6 +431,12 @@ class proses extends fb{
 			$dt	= [$dt['r1'],$dt['r2'],$dt['r3'],$dt['active'],$image,$type];
 		}
 		else if($id=='running_text')	$dt	= $dt['text'];
+		else if($id=='running_text_speed'){
+			$speed = isset($dt['speed']) ? (int) $dt['speed'] : 50;
+			if($speed < 10) $speed = 10;
+			if($speed > 300) $speed = 300;
+			$dt = $speed;
+		}
 		else if($id=='youtube'){
 			$dt['active']	= isset($dt['active']) && $dt['active']=='1';
 			$dt['mute']		= isset($dt['mute']) && $dt['mute']=='1';
@@ -490,9 +497,12 @@ class proses extends fb{
 			}
 		}
 		
-		if($index=='no-index')
-			// $db[$id]	= $dt;
-			$db[$id] = array_merge($db[$id],$dt);
+		if($index=='no-index'){
+			if(is_array($db[$id]) && is_array($dt))
+				$db[$id] = array_merge($db[$id],$dt);
+			else
+				$db[$id] = is_array($dt) && array_key_exists($id, $dt) ? $dt[$id] : $dt;
+		}
 		else if($index=='new')
 			$db[$id][]	= $dt;
 		else 
@@ -843,6 +853,7 @@ class proses extends fb{
 	private function running_text(){
 		$db	= $this->database;
 		$id	= 'running_text';
+		$runningTextSpeed = isset($db['running_text_speed']) ? (int) $db['running_text_speed'] : 50;
 		ob_start();
 		$db[$id]['new']	= '';  
 		echo '
@@ -850,6 +861,30 @@ class proses extends fb{
 			<div class="row">
 			<div class="col-md-12 col-sm-12 col-xs-12">
 		';
+		?>
+		<form method="post" class="form">
+		<div class="box box-success">
+			<div class="box-header with-border">
+				<h3 class="box-title">Kecepatan Running Text</h3>
+			</div>
+			<div class="box-body">
+				<div class="input-group">
+					<span class="input-group-addon">Speed</span>
+					<input type="number" min="10" max="300" step="1" name="speed" class="form-control" value="<?=$runningTextSpeed?>" required>
+					<span class="input-group-addon">px/detik</span>
+				</div>
+				<p class="text-muted" style="margin:10px 0 0;">Semakin besar nilainya, text jalan makin cepat.</p>
+				<div class="input">
+					<input type="hidden" name="formId" value="running_text_speed">
+					<input type="hidden" name="index" value="no-index">
+				</div>
+			</div>
+			<div class="box-footer">
+				<button type="submit" class="btn btn-primary pull-right"><i class="fa fa-floppy-o" aria-hidden="true"></i> simpan</button>
+			</div>
+		</div>
+		</form>
+		<?php
 		foreach($db[$id] as $k => $v){
 			$title	= is_int($k)?'Teks '.($k+1):'Teks Baru';
 			$delBtn	= is_int($k)?'<button type="button" class="btn btn-danger delete"><i class="fa fa-trash" aria-hidden="true"></i> hapus</button>':'';
