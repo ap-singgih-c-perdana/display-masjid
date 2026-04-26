@@ -61,7 +61,16 @@
 				currentIndex = 0;
 			}
 			if(force || currentIndex !== expectedIndex){
-				syncConfig.$element.carousel(expectedIndex);
+				if(
+					!force &&
+					currentIndex === ($items.length - 1) &&
+					expectedIndex === 0
+				){
+					syncConfig.$element.carousel('next');
+				}
+				else{
+					syncConfig.$element.carousel(expectedIndex);
+				}
 			}
 			app.scheduleCarouselSync(syncConfig);
 		},
