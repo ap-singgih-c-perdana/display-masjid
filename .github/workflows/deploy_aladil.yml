@@ -1,4 +1,4 @@
-name: Deploy via FTP
+name: Deploy via FTPS
 
 on:
   push:
@@ -17,11 +17,11 @@ jobs:
       - name: Deploy to FTP
         uses: samkirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ${{ secrets.FTP_SERVER_ALADIL }}
+          server: ijen.iixcp.rumahweb.net
           username: ${{ secrets.FTP_USERNAME_ALADIL }}
           password: ${{ secrets.FTP_PASSWORD_ALADIL }}
           port: 21
-          protocol: ftp
+          protocol: ftps
           server-dir: public_html/tv.masjidaladil.com/
           exclude: |
             .git
