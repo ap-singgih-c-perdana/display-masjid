@@ -893,10 +893,10 @@ body.image-slide-fullscreen-mode .quote-carousel .info-image-full{
 	background:#111;
 }
 body:not(.info-fullscreen-mode):not(.image-slide-fullscreen-mode) .quote-carousel .hero.info-image-only{
-	top:0 !important;
+	top:6vh !important;
+    bottom:10.5vw !important;
 	left:0 !important;
 	right:0 !important;
-	bottom:8.5vw !important;
 	width:auto !important;
 	height:auto !important;
 	max-width:none !important;
